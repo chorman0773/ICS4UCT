@@ -5,6 +5,8 @@
 #include "JTime.hpp"
 #include <cstdint>
 #include <string>
+#include <type_traits>
+#include "Hash.hpp"
 using std::string;
 namespace net{
     class PacketBuffer;
@@ -20,21 +22,21 @@ namespace net{
         void handle(Packet&);
     };
 
-    class Packet{
+    class Packet : public Hashable{
     public:
         virtual void writeTo(PacketBuffer&)=0;
         virtual void readFrom(PacketBuffer&)=0;
-        virtual int getId()=0;
+        virtual int getId()const=0;
     };
 
     class PacketPtr{
         Packet* p;
     public:
         PacketPtr(int);
-        PacketPtr(Packet&);
+        PacketPtr(const Packet&);
         PacketPtr(Packet&&);
         ~PacketPtr();
-        PacketPtr& operator=(Packet&);
+        PacketPtr& operator=(const Packet&);
         PacketPtr& operator=(Packet&&);
         Packet* operator->();
         Packet& operator*();
@@ -118,7 +120,8 @@ namespace net{
             void getSessionKey(unsigned char*);
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
 
         class CPacketSetEmployee final:public Packet{
@@ -131,7 +134,8 @@ namespace net{
             void getSessionKey(unsigned char*);
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
 
         class CPacketAuthenticate final:public Packet{
@@ -143,12 +147,53 @@ namespace net{
             void verify(unsigned char*,unsigned char(&)[128]);
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
         class CPacketAddEmployee final:public Packet{
             string name;
             double salary;
+        public:
+            CPacketAddEmployee(const string&,double);
+            CPacketAddEmployee();
+            const string& getName()const;
+            double getSalary()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
         };
+        class CPacketModifyEmployee{
+            enum class Action{
+                DELETE, SET_SALARY, ADD_PERMISSION, REMOVE_PERMISSON
+            };
+            Action action;
+            UUID employee;
+            double nSalary;
+            Permission affectedPermission;
+        public:
+            CPacketModifyEmployee(const UUID&);
+            CPacketModifyEmployee(const UUID&,double);
+            CPacketModifyEmployee(cosnt UUID&,Action a,Permission p);
+            CPacketModifyEmployee();
+            Action getAction()const;
+            double getNewSalary()const;
+            Permission getAffectedPermission()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+
+        class CPacketDisconnect final:public Packet{
+        public:
+            CPacketDisconnect();
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+
         class CPacketKeepAlive final:public Packet{
             UUID cycleId;
             Instant encodingTime;
@@ -160,6 +205,7 @@ namespace net{
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
             int getId();
+            int hashCode()const;
         };
     };
     namespace server{
@@ -173,7 +219,8 @@ namespace net{
             const UUID& getCycleId()const;
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
         class SPacketSendEncryptedPrivateKey final:public Packet{
             unsigned char privateKey[144];
@@ -183,14 +230,16 @@ namespace net{
             void getEncryptedPrivateKey(unsigned char*);
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
         class SPacketAuthenticationSuccess final:public Packet{
         public:
             SPacketAuthenticationSuccess();
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
         };
         class SPacketAuthenticationFailure final:public Packet{
             string reason;
@@ -200,7 +249,30 @@ namespace net{
             const string& getReason()const;
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketDisconnect final:public Packet{
+            string reason;
+        public:
+            SPacketAuthenticationFailure();
+            SPacketAuthenticationFailure(const string&);
+            const string& getReason()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketEmployeeList final:public Packet{
+            Employees employeeList;
+        public:
+            SPacketEmployeeList(const Employees&);
+            SPacketEmployeeList();
+            const Employees& getEmployees()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
         };
     };
 };

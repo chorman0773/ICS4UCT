@@ -20,7 +20,7 @@ enum class Permission{
 class Employee : public Hashable{
 	string name;
 	UUID id;
-	double pay;
+	double salary;
 	unsigned char iv[16];
 	unsigned char salt[32];
 	unsigned char pubKey[128];
@@ -28,11 +28,9 @@ class Employee : public Hashable{
 public:
 	Employee();
 	Employee(const string&,const UUID&,double,const unsigned char(&)[16],const unsigned char(&)[32],const unsigned char(&)[128],const EnumSet<Permission>&);
-	Employee newEmployee(const string&,double);
+	static Employee newEmployee(const string&,double);
 	int32_t hashCode()const;
 	const string& getName()const;
-	bool checkAuth(unsigned const char*);
-	void hashSHA256(unsigned char*);
 	bool hasPermission(Permission)const;
 	void addPermission(Permission);
 	void removePermission(Permission);
@@ -44,7 +42,7 @@ public:
 	const EnumSet<Permission>& getPermissions()const;
 };
 
-class Employees{
+class Employees:public Hashable{
 	map<UUID,Employee> employeeMap;
 	vector<Employee> employeeRegistry;
 	typedef vector<Employee>::iterator iterator;
@@ -61,14 +59,6 @@ public:
 	const_iterator begin()const;
 	iterator end();
 	const_iterator end()const;
-};
-
-class Authenticator{
-private:
-	Employee& target;
-public:
-	Authenticator(const UUID&);
-	void validate(const char*);
 };
 
 
