@@ -18,14 +18,16 @@ public:
 	static UUID ofNow();
 	UUID(uint64_t,uint64_t);
 	UUID();
+	UUID(string);
 	uint64_t getHigh()const;
 	uint64_t getLow()const;
 	int32_t hashCode()const;
 	string toString()const;
 };
 
-ostream& operator<<(ostream&,UUID&);
+ostream& operator<<(ostream&,const UUID&);
 istream& operator>>(istream&,UUID&);
+string&  operator+(string&,const UUID&);
 
 
 

@@ -1,15 +1,16 @@
 #include "Bindings.hpp"
+#include <cstring>
 
-Employee::Employee():name(),uuid("00000000-0000-0000-0000-000000000000"),salary(0){};
+Employee::Employee():name(),id("00000000-0000-0000-0000-000000000000"),salary(0){};
 Employee::Employee(const string& name,const UUID& id,double salary,const unsigned char (&iv)[16],
                     const unsigned char(&salt)[32],const unsigned char(&pub)[128],const EnumSet<Permission>& permissions)
-                    :name(name),uuid(id),salary(salary),permissions(permissions){
+                    :name(name),id(id),salary(salary),permissions(permissions){
                         memcpy(this->iv,iv,16);
                         memcpy(this->salt,salt,32);
                         memcpy(this->pubKey,pub,128);
                     }
 
-int32_t Employee::hashCode(){
+int32_t Employee::hashCode()const{
     int32_t hash = hashcode(name);
     const int32_t hashPrime = 31;
     hash *= hashPrime;
@@ -31,14 +32,14 @@ void Employee::removePermission(Permission perm){
 }
 
 const UUID& Employee::getUUID()const{
-    return uuid;
+    return id;
 }
 
 double Employee::getPay()const{
     return salary;
 }
 
-const EnumSet<Permissions>& Employee::getPermissions()const{
+const EnumSet<Permission>& Employee::getPermissions()const{
     return permissions;
 }
 
@@ -66,6 +67,10 @@ Employees::iterator Employees::end(){
     return employeeRegistry.end();
 }
 
-Employees::iterator Employees::end()const{
+Employees::const_iterator Employees::end()const{
     return employeeRegistry.cend();
+}
+
+int Employees::hashCode()const{
+    return hashcode(employeeRegistry);
 }

@@ -59,6 +59,7 @@ public:
 	const_iterator begin()const;
 	iterator end();
 	const_iterator end()const;
+	int hashCode()const;
 };
 
 

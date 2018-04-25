@@ -3,6 +3,7 @@
 #include "Hash.hpp"
 #include <chrono>
 #include <iomanip>
+#include <sstream>
 #include "StringHelper.hpp"
 #include <cstdlib>
 #include "Random.hpp"
@@ -18,6 +19,9 @@ Random uuidRandom;
 using std::string;
 using std::stoull;
 using std::setbase;
+using std::ostringstream;
+using std::ostream;
+using std::istream;
 
 const string sep("-");
 const int sizes[] = {8,4,4,4,12};
@@ -29,13 +33,10 @@ int32_t UUID::hashCode()const{
 UUID::UUID(uint64_t high,uint64_t low):high(high),low(low){}
 UUID::UUID():high(0),low(0){}
 
-
-UUID UUID::fromString(string str){
+UUID::UUID(string str){
 	string currPart;
 	string highPart;
 	string lowPart;
-	uint64_t high;
-	uint64_t low;
 
 	int i;
 	for(i = 0;i<5;i++)
@@ -44,7 +45,11 @@ UUID UUID::fromString(string str){
 	lowPart.assign(currPart,16,16);
 	high = stoull(highPart,nullptr,16);
 	low = stoull(lowPart,nullptr,16);
-	return UUID(high,low);
+}
+
+
+UUID UUID::fromString(string str){
+	return UUID(str);
 }
 
 uint64_t UUID::getHigh()const{
@@ -59,7 +64,7 @@ uint64_t versionMask = 0xf000;
 
 
 
-ostream& operator<<(ostream& o,UUID& id){
+ostream& operator<<(ostream& o,const UUID& id){
 	uint64_t high = id.getHigh();
 	uint64_t low = id.getLow();
 	uint64_t high1 = high>>32;
@@ -75,11 +80,21 @@ ostream& operator<<(ostream& o,UUID& id){
 	return o;
 }
 
+string UUID::toString(){
+	ostringstream str;
+	str<<*this;
+	return str.str();
+}
+
 istream& operator>>(istream& i,UUID& id){
 	string s;
 	i >> s;
 	id= UUID::fromString(s);
 	return i;
+}
+
+string& operator+(string& s,const UUID& id){
+	return s+id.toString();
 }
 
 Instant UUID_EPOCH = Instant::fromEpochSecond(-12244089600);
