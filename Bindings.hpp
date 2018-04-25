@@ -16,6 +16,9 @@ enum class Permission{
 	ADMINISTRATOR
 };
 
+enum class Status{
+	OFFLINE, AWAY, ONLINE
+};
 
 class Employee : public Hashable{
 	string name;
@@ -25,6 +28,7 @@ class Employee : public Hashable{
 	unsigned char salt[32];
 	unsigned char pubKey[128];
 	EnumSet<Permission> permissions;
+	Status s;
 public:
 	Employee();
 	Employee(const string&,const UUID&,double,const unsigned char(&)[16],const unsigned char(&)[32],const unsigned char(&)[128],const EnumSet<Permission>&);
@@ -37,9 +41,12 @@ public:
 	void getIv(unsigned char*)const;
 	void getSalt(unsigned char*)const;
 	void getPublicKey(unsigned char*)const;
+	void setStatus(Status);
 	const UUID& getUUID()const;
+	Status getStatus()const;
 	double getPay()const;
 	const EnumSet<Permission>& getPermissions()const;
+	
 };
 
 class Employees:public Hashable{
@@ -54,11 +61,13 @@ public:
 	void save()const;
 	void removeEmployee(const UUID&);
 	const UUID& addEmployee(const string&,double);
+	void addEmployee(const Employee&);
 	Employee& getEmployee(const UUID&);
 	iterator begin();
 	const_iterator begin()const;
 	iterator end();
 	const_iterator end()const;
+	int length()const;
 	int hashCode()const;
 };
 

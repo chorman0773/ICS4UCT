@@ -8,19 +8,25 @@
 #include <type_traits>
 #include "Hash.hpp"
 using std::string;
+class Client;
 namespace net{
     class PacketBuffer;
     class Packet;
-
+    class Connection;
     class ClientBinding{
-        SOCKET sock;
+        Connection& con;
+        Client* client;
     public:
-        ClientBinding(SOCKET);
-        void send(PacketBuffer&);
-        int recieve(PacketBuffer&);       
+        ClientBinding(Connection&);
+        void send(PacketBuffer&);      
         void send(Packet&);
         void handle(Packet&);
+        void handleNext();
+        void setClient(Client&);
+        void disconnect(const string&);
     };
+
+    
 
     class Packet : public Hashable{
     public:
@@ -29,40 +35,35 @@ namespace net{
         virtual int getId()const=0;
     };
 
-    class PacketPtr{
-        Packet* p;
-    public:
-        PacketPtr(int);
-        PacketPtr(const Packet&);
-        PacketPtr(Packet&&);
-        ~PacketPtr();
-        PacketPtr& operator=(const Packet&);
-        PacketPtr& operator=(Packet&&);
-        Packet* operator->();
-        Packet& operator*();
-    };
-    PacketPtr operator&(Packet&);
-
     class PacketBuffer{
         int size;
         int ptr;
         unsigned char* data;
         void resize(int);
     public:
+        PacketBuffer();
         PacketBuffer(int,unsigned char*);
+        PacketBuffer(const PacketBuffer&);
+        PacketBuffer& operator=(const PacketBuffer&);
+        ~PacketBuffer();
         const unsigned char* getData()const;
-        int getSize();
+        int getSize()const;
+        int length()const;
         void write(unsigned char);
         int read();
         void writeByte(int);
         void writeShort(int);
         void writeInt(int);
         void writeLong(int64_t);
+        void writeFloat(float);
+        void writeDouble(double);
         void writeUtf(const string&);
         void writeEmployeeData(const Employee&);
         void writeUUID(const UUID&);
         void writeInstant(const Instant&);
         void writeDuration(const Duration&);
+        void writeBytes(unsigned char*,size_t,size_t);
+        void writeVersion(Version);
         char readByte();
         int readUnsignedByte();
         short readShort();
@@ -74,6 +75,8 @@ namespace net{
         UUID readUUID();
         Instant readInstant();
         Duration readDuration();
+        int readBytes(unsigned char*,size_t,size_t);
+        Version readVersion();
 
         PacketBuffer& operator<<(char);
         PacketBuffer& operator<<(unsigned char);
@@ -81,16 +84,15 @@ namespace net{
         PacketBuffer& operator<<(unsigned short);
         PacketBuffer& operator<<(int);
         PacketBuffer& operator<<(int64_t);
+        PacketBuffer& operator<<(float);
+        PacketBuffer& operator<<(double);
         PacketBuffer& operator<<(const string&);
         PacketBuffer& operator<<(const Employee&);
         PacketBuffer& operator<<(const UUID&);
         PacketBuffer& operator<<(const Instant&);
         PacketBuffer& operator<<(const Duration&);
-        template<size_t s> PacketBuffer& operator<<(unsigned char(&arr)[s]){
-            for(size_t i = 0;i<s;i++)
-                *this << arr[i];
-            return *this;
-        }
+        PacketBuffer& operator<<(Version);
+        PacketBuffer& operator<<(const PacketBuffer&);
 
         PacketBuffer& operator>>(char&);
         PacketBuffer& operator>>(unsigned char&);
@@ -98,16 +100,15 @@ namespace net{
         PacketBuffer& operator>>(unsigned short&);
         PacketBuffer& operator>>(int&);
         PacketBuffer& operator>>(int64_t&);
+        PacketBuffer& operator>>(float&);
+        PacketBuffer& operator>>(double&);
         PacketBuffer& operator>>(string&);
         PacketBuffer& operator>>(Employee&);
         PacketBuffer& operator>>(UUID&);
         PacketBuffer& operator>>(Instant&);
         PacketBuffer& operator>>(Duration&);
-        template<size_t s> PacketBuffer& operator>>(unsigned char(&arr)[s]){
-            for(size_t i = 0;i<s;i++)
-                *this >> arr[i];
-            return *this;
-        }
+        PacketBuffer& operator>>(Version&);
+        
     };
 
     namespace client{
@@ -204,7 +205,66 @@ namespace net{
             const UUID& getCycleId()const;
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
-            int getId();
+            int getId()const;
+            int hashCode()const;
+        };
+
+        class CPacketChangePassword final:public Packet{
+            char* newPassword;
+        public:
+            CPacketChangePassword();
+            CPacketChangePassword(char*);
+            void getNewPassword(char*);
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class CPacketConnect final:public Packet{
+            Version ver;
+        public:
+            CPacketConnect();
+            CPacketConnect(Version);
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            Version getVersion()const;
+            int getId()const;
+            int hashCode()const;
+        };
+        class CPacketRequestElevation final:public Packet{
+        public:
+            CPacketRequestElevation();
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class CPacketUpdateStatus final:public Packet{
+            Status s;
+        public:
+            CPacketUpdateStatus();
+            CPacketUpdateStatus(Status);
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+
+        class CPacketAuthenticateElevated final:public Packet{
+            unsigned char sessionKey[16];
+            unsigned char elevatedSessionKey[16];
+            unsigned char signedSessionKey[128];
+            unsigned char signedElevatedKey[128];
+        public:
+            CPacketAuthenticateElevated();
+            CPacketAuthenticateElevated(Client&);
+            void getSession(unsigned char*);
+            void getElevatedSession(unsigned char*);
+            void verifySession(const unsigned char*);
+            void verifyElevated(const unsigned char*);
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
             int hashCode()const;
         };
     };
@@ -223,11 +283,12 @@ namespace net{
             int hashCode()const;
         };
         class SPacketSendEncryptedPrivateKey final:public Packet{
-            unsigned char privateKey[144];
+            size_t len;
+            unsigned char* privateKey;
         public:
             SPacketSendEncryptedPrivateKey();
-            SPacketSendEncryptedPrivateKey(unsigned char*);
-            void getEncryptedPrivateKey(unsigned char*);
+            SPacketSendEncryptedPrivateKey(size_t,unsigned char*);
+            size_t getEncryptedPrivateKey(unsigned char*);
             void writeTo(PacketBuffer&);
             void readFrom(PacketBuffer&);
             int getId()const;
@@ -274,7 +335,86 @@ namespace net{
             int getId()const;
             int hashCode()const;
         };
+        class SPacketOperationResult final:public Packet{
+            string msg;
+            bool res;
+        public:
+            SPacketOperationSuccess(const string&,bool);
+            SPacketOperatorSuccess();
+            const string& getMessage()const;
+            bool didSucceed()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketConnectSuccess final:public Packet{
+            unsigned char session[16];
+        public:
+            SPacketConnectSuccess();
+            SPacketConnectSuccess(unsigned char(&)[16]);
+            void getSessionKey(unsigned char*)const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketUpdateEmployeePublic final:public Packet{
+            UUID employee;
+            int publicKeyLength;
+            unsigned char* publicKey;
+        public:
+            SPacketUpdateEmployeePublic();
+            SPacketUpdateEmployeePublic(const UUID&);
+            void getPublicKey(unsigned char*);
+            int getPublicKeyLength();
+            const UUID& getEmployee()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketUpdateEmployeeStatus final:public Packet{
+            UUID employee;
+            Status status;
+        public:
+            SPacketUpdateEmployeeStatus();
+            SPacketUpdateEmployeeStatus(const UUID&);
+            const UUID& getEmployee()const;
+            Status getStatus()const;
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
+        class SPacketElevateSession final:public Packet{
+            unsigned char elevatedSession[16];
+        public:
+            SPacketElevateSession();
+            SPacketElevateSession(unsigned char*);
+            void getElevatedKey(unsigned char*);
+            void writeTo(PacketBuffer&);
+            void readFrom(PacketBuffer&);
+            int getId()const;
+            int hashCode()const;
+        };
     };
+
+    class Connection{
+        SOCKET sock;
+        unsigned char aesKey[32];
+        client::CPacketKeepAlive lastClientKeepAlive;
+        server::SPacketKeepAlive lastServerKeepAlive;
+        uint64_t latency;
+    public:
+        Connection(SOCKET);
+        ~Connection();
+        void handshake();
+        void send(PacketBuffer&);
+        int recieve(PacketBuffer&,int32_t&);
+        void close();
+        void handle(Packet&);
+    }
 };
 
 
