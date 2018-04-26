@@ -1,5 +1,7 @@
 Client:
   Log In
+  Temporarily: Read password from input securely
+  Echo password to screen.
   Set Status
   Log Out
   Manage (Only when authenticated and when using an account with Administrator Permissions)
