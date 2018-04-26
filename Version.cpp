@@ -9,6 +9,8 @@
 #include <string>
 #include <stdexcept>
 
+using std::string;
+using std::to_string;
 using std::stoi;
 using std::invalid_argument;
 
@@ -32,10 +34,6 @@ Version::Version(int major,int minor):major(major),minor(minor){
 			throw invalid_argument("Major must be between 1 and 256, and Minor must be between 0 and 255 (inclusive)");
 }
 
-Version::Version(InputStream& src){
-	major = src.read()+1;
-	minor = src.read();
-}
 
 int Version::getEncoded()const{
 	return (major-1)*256|minor;
@@ -69,10 +67,7 @@ bool Version::operator<=(const Version& o)const{
 bool Version::operator>=(const Version& o)const{
 	return *this==o||*this>o;
 }
-void Version::write(OutputStream& o)const{
-	o.write(major-1);
-	o.write(minor);
-}
+
 
 ostream& operator <<(ostream& o,const Version& v){
 	return o<<v.toString();
@@ -84,15 +79,8 @@ istream& operator >>(istream& i,Version& v){
 	return i;
 }
 
-DataOutputStream& operator <<(DataOutputStream& o,const Version& v){
-	v.write(o);
-	return o;
+string Version::toString()const{
+	return to_string(major)+"."+to_string(minor);
 }
-
-DataInputStream& operator>>(DataInputStream& i,Version& v){
-	v = i;
-	return i;
-}
-
 
 
