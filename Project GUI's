@@ -1,0 +1,31 @@
+Client:
+  Log In
+  Set Status
+  Log Out
+  Manage (Only when authenticated and when using an account with Administrator Permissions)
+  Exit
+  
+  string items[] = {"Log In","Set Status","Log Out"};
+  Menu m(items,sizeof(items)/sizeof(string));
+  bool running(true);
+  m.setTerminalItem("Exit");
+  while(running){
+    switch(menu(m)){
+    case -1:
+      running = false;
+    break;
+    case 0:
+     
+    break;
+    case 1:
+      
+    break;
+    case 2:
+      
+    break;
+    case 3:
+      //Manage
+    break;
+    }
+   }
+  
