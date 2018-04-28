@@ -8,6 +8,10 @@
 #include "StringHelper.hpp"
 #include <string>
 #include <stdexcept>
+#define CURR_MAJOR 1
+#define CURR_MINOR 0
+#define MIN_MAJOR  1
+#define MIN_MINOR  0
 
 using std::string;
 using std::to_string;
@@ -82,5 +86,10 @@ istream& operator >>(istream& i,Version& v){
 string Version::toString()const{
 	return to_string(major)+"."+to_string(minor);
 }
+
+
+Version::Version(VersionConstants<minimum> _):major(MIN_MAJOR),minor(MIN_MINOR){}
+Version::Version(VersionConstants<current> _):major(CURR_MAJOR),minor(CURR_MINOR){}
+Version::Version(VersionConstants<currOrigin> _):major(CURR_MAJOR),minor(0){}
 
 
