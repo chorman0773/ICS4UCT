@@ -35,7 +35,7 @@ template<typename E> class EnumSet{
         iterator(uint64_t map):state(map),bit(0){
             bit = nextSetBit(0);
         }
-        iterator(uint64_t map,int bit){}
+        iterator(uint64_t map,int bit):state(map),bit(bit){}
         iterator& operator++(int){
             bit = nextSetBit(bit);
             return *this;
