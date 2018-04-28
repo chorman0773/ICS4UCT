@@ -1,6 +1,7 @@
 /*
  * Version.hpp
- *
+ * Class for Version Management.
+ * Versions are comparable and Hashable. 
  *  Created on: Apr 4, 2018
  *      Author: Connor Horman
  */
@@ -56,15 +57,18 @@ public:
 	 * Major must be between 1 and 256 and minor must be between 0 and 255
 	 */
 	Version(int,int);
-	/*
-	 * Reads a Version from a data stream.
-	 * This constructor should have the effect of reading 2 bytes (Big-Endian byte order)
-	 * and passing the result to the Version(int) constructor.
-	 */
-	Version(InputStream&);
 	
+	/*
+	* Obtains the Minimum Supported Version.
+	*/
 	Version(VersionConstants<minimum>);
+	/*
+	* Obtains the Current running Version.
+	*/
 	Version(VersionConstants<current>);
+	/*
+	* Obtains the Origin of the current Version.
+	*/
 	Version(VersionConstants<currOrigin>);
 	/*
 	 * Gets the major version, ranging from 1 to 256
@@ -117,11 +121,6 @@ public:
 	 * Compound Comparison >=
 	 */
 	bool operator>=(const Version&)const;
-	/*
-	 * Writes this version to a data stream.
-	 * This has the same side effect as writing the major version -1, then writing the minor version
-	 */
-	void write(OutputStream&)const;
 };
 
 /*
