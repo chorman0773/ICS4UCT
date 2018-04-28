@@ -139,5 +139,9 @@ istream& operator>>(istream&,Version&);
  */
 ostream& operator<<(ostream&,const Version&);
 
+typedef VersionConstants<current> CurrentVersion;
+typedef VersionConstants<minimum> MinimumVersion;
+typedef VersionConstants<currOrigin> CurrentOrigin;
+
 
 #endif /* __VERSION_HPP__18_04_04_11_12_42 */
