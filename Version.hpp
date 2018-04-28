@@ -15,6 +15,12 @@ using std::string;
 using std::istream;
 using std::ostream;
 
+enum predefined{
+	minimum, current, currOrigin
+};
+
+template<predefined target> struct VersionConstants{};
+
 /*
  * Represents a version of the code.
  * This specification only defines the Major and Minor parts of the version and is encoded
@@ -56,6 +62,10 @@ public:
 	 * and passing the result to the Version(int) constructor.
 	 */
 	Version(InputStream&);
+	
+	Version(VersionConstants<minimum>);
+	Version(VersionConstants<current>);
+	Version(VersionConstants<currOrigin>);
 	/*
 	 * Gets the major version, ranging from 1 to 256
 	 */
