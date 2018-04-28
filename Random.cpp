@@ -18,9 +18,9 @@ seed_t nextMultiplier(){
 	else if(val%10==4)
 		return nextMultiplier();//Probably doesn't have an adjacent prime
 	else if(val%10==6)
-		val++;//Adjacent prime is likely 1 more than val
+		val++;//Adjacent prime is likely 1 more than val, if it exists
 	else if(val%8==8)
-		return nextMultiplier();//Probably doesn't have an adjacent prime, if it exists
+		return nextMultiplier();//Probably doesn't have an adjacent prime
 	return val*cprime;
 }
 seed_t genUniqueSeed(){
