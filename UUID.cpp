@@ -121,5 +121,7 @@ UUID UUID::randomUUID(){
 		arr[i] = output[2*i]^output[i];
 	high = arr[0]<<56L|arr[1]<<48LL|arr[2]<<40LL|arr[3]<<32LL|arr[4]<<24L|arr[5]<<16L|arr[6]<<8L|arr[7];
 	low = arr[8]<<56L|arr[9]<<48LL|arr[10]<<40LL|arr[11]<<32LL|arr[12]<<24L|arr[13]<<16L|arr[14]<<8L|arr[15];
+	high &= ~versionMask;
+	high |= randomVersion;
 	return UUID(high,low);
 }
