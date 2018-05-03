@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include "Random.hpp"
 #include "JTime.hpp"
+#include <openssl/SHA.h>
 
 extern const int32_t hashPrime;
 
@@ -106,5 +107,19 @@ UUID UUID::ofNow(){
 	int64_t rnode = (uuidRandom.nextLong()&0x7FFFFFFFFFFF)|0x800000000000;
 	int64_t low = rnode|(0xE000|(d.hashCode()&0xCFFF))<<56LL;
 	int64_t high = (ts&0xFFFFFFFF)<<32|((ts>>32)&0xFFFF)<<16|0x1000|((ts>>48)&0xFFF);
+	return UUID(high,low);
+}
+
+UUID UUID::randomUUID(){
+	uint64_t high;
+	uint64_t low;
+	array<unsigned char,16> arr;
+	array<unsigned char,32> output;
+	uuidRandom.nextBytes(arr);
+	SHA256(arr.data(),16,output.data());
+	for(int i = 0;i<16;i++)
+		arr[i] = output[2*i]^output[i];
+	high = arr[0]<<56L|arr[1]<<48LL|arr[2]<<40LL|arr[3]<<32LL|arr[4]<<24L|arr[5]<<16L|arr[6]<<8L|arr[7];
+	low = arr[8]<<56L|arr[9]<<48LL|arr[10]<<40LL|arr[11]<<32LL|arr[12]<<24L|arr[13]<<16L|arr[14]<<8L|arr[15];
 	return UUID(high,low);
 }
