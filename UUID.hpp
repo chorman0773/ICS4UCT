@@ -15,6 +15,7 @@ public:
 	static UUID fromString(string);
 	static UUID randomUUID();
 	static UUID uuidFromNamespace(string);
+	static UUID randomUUID();
 	static UUID ofNow();
 	UUID(uint64_t,uint64_t);
 	UUID();
