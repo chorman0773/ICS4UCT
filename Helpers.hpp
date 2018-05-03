@@ -4,4 +4,6 @@
 void waitForInterrupt();
 void startInteruptThread();
 
+void startServerThread();
+
 #endif
