@@ -1,14 +1,41 @@
 Client:
-  Log In
-  Temporarily: Read password from input securely
-  Echo password to screen.
+	Log In
+		Temporarily: Read password from input securely
+		Echo password to screen.
   Set Status
+		Sub menu.
+		Fail if not authenticated
+		Online
+		Away
+		Offline
   Log Out
-  Manage (Only when authenticated and when using an account with Administrator Permissions)
+		Fail if not authenticated.
+		Close the current session, but does not close the connection
+	Change password (When authenticated without Administrator Permission)
+		Require's you to enter your password again.
+		Enter a new password
+		Confirm it.
+	Manage (When Authenticated with Administrator Permissions)
+		Requires you to enter your password again (gain elevation).
+		You have to do this every time.
+		Submenu with following options
+		Change password
+			Select the target employee
+			Enter the employees new password.
+		Add Employee
+			Enter the Full name of the employee
+			Enter the base Salary
+		Modify Employee
+			Select the target employee.
+				Can change name or salary.
+		Remove Employee
+			Select the target employee.
+				Confirm twice with "confirm", once without inversion, once with.
   Exit
-  
+  	Automatically logs out if authenticated, then closes the connection.
 
 Server:
+	List all online users (updates once every second).
   Employee Name | Status
   ======================
   sysadmin      | ONLINE
