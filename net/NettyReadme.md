@@ -1,7 +1,8 @@
 	This file describes the implementation of the Communications Protocol of this Program.
 	The Protocol is based on the Abstract Protocol Layout of PkmCom 
-   You can find the link to The PkmCom Protocol here: <https://docs.google.com/document/d/1hqRjaHQU3yXQVvzzb8121tUnnlGSVQq62ASIj7fCtBM>
-#Abstract Protocol Layout Changes
+   [PkmCom Protocol Definition and APL](<https://docs.google.com/document/d/1hqRjaHQU3yXQVvzzb8121tUnnlGSVQq62ASIj7fCtBM>)
+
+	Abstract Protocol Layout Changes:
 
 	The following changes were to the APL of the protocol to make it viable in this case:
 	
@@ -93,7 +94,9 @@
 	The hashcode of the Employee Type is given by taking the hashsum of the hashcode of each field in order
 	(hashsum is given by adding together the values, multiplying the previous total by 31 before adding the next value, starting at 0)
 
-#The Protocol 
+	The Protocol:
+
+[Protocol Layout](https://docs.google.com/document/d/1j5r-z6lJQ3zyhib1KpUsrSG0lSR8E20drOiNftBqHmM/edit?usp=sharing)
 		
 	
 	
