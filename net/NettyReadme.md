@@ -95,6 +95,7 @@
 	The hashsum is given by adding together the values, 
 	Mutiplying the previous total by 31 before adding the next value, starting at 0
 
+	The Current Version of the project is Version 1.0, which is based off of Version 1.0 of PkmCom.
 
 The Definition of the Protocol is given at the link below
 
