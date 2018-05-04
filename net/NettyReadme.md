@@ -92,13 +92,17 @@
 </table>
 
 	The hashcode of the Employee Type is given by taking the hashsum of the hashcode of each field in order
-	(hashsum is given by adding together the values, multiplying the previous total by 31 before adding the next value, starting at 0)
+	The hashsum is given by adding together the values, 
+	Mutiplying the previous total by 31 before adding the next value, starting at 0
 
-	The Protocol:
 
-[Protocol Layout](https://docs.google.com/document/d/1j5r-z6lJQ3zyhib1KpUsrSG0lSR8E20drOiNftBqHmM/edit?usp=sharing)
+The Definition of the Protocol is given at the link below
+
+[Protocol Definition](https://docs.google.com/document/d/1j5r-z6lJQ3zyhib1KpUsrSG0lSR8E20drOiNftBqHmM/edit?usp=sharing)
 		
 	
 	
 
-
+	PkmCom Protocol and the PkmCom Abstract Protocol Layout are Copyright 2018, Connor Horman.
+	Please read Copyright header of the Specification for the terms of use for the Document
+	This document is compliant with the terms of that License.
