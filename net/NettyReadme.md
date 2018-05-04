@@ -104,6 +104,5 @@ The Definition of the Protocol is given at the link below
 	
 
 	PkmCom Protocol and the PkmCom Abstract Protocol Layout are Copyright 2018, Connor Horman.
-	Please read Copyright header of the Specification for the terms of use for the Document
-	This document is compliant with the terms of that License.
-	In addition, this document, and the project are considered isolated and separate from that Project.
+	Please read the Copyright header of the Specification for the terms of use of that Document
+	This document and this project are compliant with the terms of that License.
