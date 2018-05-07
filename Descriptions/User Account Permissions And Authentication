@@ -8,4 +8,15 @@
 	
 	
 	Authenticating:
-	On startup, the user database is transmitted from the server to the client, the client should compare to the cached database and update the file accordingly. The cache ensures faster startup time (as the client will load the cached file to display the "Log In as user menu". If you select an account, before it loads the table it will print "Please wait for the Server", after the password is entered until the server responds. If the server does not respond within 2 seconds, the display will print "Could not connect: Timed Out".
+	On startup, the user database is transmitted from the server to the client, the client should compare to the cached database
+	and update the file accordingly. 
+	The cache ensures faster startup time (as the client will load the cached file to display the "Log In as user menu"). 
+	If you select an account, before it loads the table it will print "Please wait for the Server", 
+	after the password is entered until the server responds. 
+	If the server does not respond within 2 seconds, the display will print "Could not connect: Timed Out".
+	
+	
+	Connection Keep-Alive Info:
+	The connection will wait for a small "Keep Alive" signal. The connection may close if the connection becomes poor
+	or disconnected. If this occurs it will print "Connection Timed Out".
+	
