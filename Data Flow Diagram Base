@@ -1,0 +1,32 @@
+
+Client:
+
+P1: Netty
+F1: (Remote) Employee Database
+F2: (Remote) Employee Private Key Table
+
+P2: Startup <- P1
+
+P3: Authentication <- P1, P2, User, F1, F2
+
+P4: User Menu <- P3, User
+
+P5: Set Status <- P1, Users ;-> P1
+
+P6: Log Out -> P1
+
+P7: Exit -> P1
+
+P8: Elevated Enable (Sudo Mode) <- P1, P3, User ; -> P1 
+
+P9: Change Active Password <- P1, P8, User ; -> P1, F1, F2
+
+P10: Administrator Menu <- P3, P1, User ; -> P1, P4
+
+P11: Change Users Password <- P1, User ; -> P1, F1, F2
+
+P12: Add Account <- P1 ; -> P1, F1, F2
+
+P13: Modify Account <- P1, F1, User ; -> P1, F1
+
+P14: Delete Account <- P1, F1, User ; -> P1
