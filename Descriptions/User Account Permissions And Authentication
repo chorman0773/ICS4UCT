@@ -1,0 +1,11 @@
+	Log In/Authenticate:
+	This permission is effectively guarenteed. If a user does not have this permission, then authentication will fail with "Insufficient permission".
+	Administrator:
+	This permission is granted to the highest level users, (CO's and IT Admins)
+	This permission grants access to the "Administrator menu". Further, this permissions "implies" all other permissions.
+	
+	
+	
+	
+	Authenticating:
+	On startup, the user database is transmitted from the server to the client, the client should compare to the cached database and update the file accordingly. The cache ensures faster startup time (as the client will load the cached file to display the "Log In as user menu". If you select an account, before it loads the table it will print "Please wait for the Server", after the password is entered until the server responds. If the server does not respond within 2 seconds, the display will print "Could not connect: Timed Out".
