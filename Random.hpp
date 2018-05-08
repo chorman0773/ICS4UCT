@@ -31,13 +31,13 @@ private:
 	bool haveNextNextGaussian;
 	mutex lock;
 protected:
-	uint32_t next(int bits);
+	virtual uint32_t next(int bits);
 
 public:
 	Random();
 
 	Random(seed_t);
-	void setSeed(seed_t);
+	virtual void setSeed(seed_t);
 
 	int nextInt();
 	int nextInt(int);
@@ -45,15 +45,13 @@ public:
 	int64_t nextLong();
 	float nextFloat();
 	double nextDouble();
-	template<int size> void nextBytes(array<uint8_t,size>&);
+	virtual void nextBytes(uint8_t*,size_t);
+	template<size_t size> void nextBytes(array<uint8_t,size>&);
 	
 };
 
-template<int size> void Random::nextBytes(array<uint8_t,size>& bytes) {
-   for (int i = 0; i < size; )
-     for (int rnd = nextInt(), n = __min(size - i, 4);
-          n-- > 0; rnd >>= 8)
-       bytes[i++] = (byte)rnd;
+template<size_t size> void Random::nextBytes(array<uint8_t,size>& bytes) {
+   this->nextBytes(bytes.data(),size);
  }
 
 
