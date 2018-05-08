@@ -17,7 +17,7 @@ class Client{
 public:
     Client(net::ClientBinding&);
     void setUser(const Employee&);
-    void authenticate();
+    void authenticate(string&);
     const Employee& getEmployee();
     void getSessionKey(unsigned char*);
     void setElevatedMode(unsigned char*);
