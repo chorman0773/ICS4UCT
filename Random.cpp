@@ -103,5 +103,11 @@ double Random::nextDouble(){
 	return ((long)next(26) << 27 + next(27))/((double)(1L << 53));
 }
 
+void Random::nextBytes(uint8_t* out,size_t size){
+	for (int i = 0; i < size; )
+		for (int rnd = nextInt(), n = __min(size - i, 4);
+        	  n-- > 0; rnd >>= 8)
+      		 bytes[i++] = (byte)rnd;
+}
 
 
