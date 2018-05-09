@@ -42,7 +42,9 @@ void SecureRandom::generateBytes(uint8_t* output){
   AES_set_encrypt_key(this->key1,256,&keya);
   AES_set_encrypt_key(this->key2,256,&keyb);
   AES_cbc_encrypt(this->state,32,tmp,&keya,iv,1);
+  SHA256(tmp,32,tmp);
   AES_cbc_encrypt(this->state,32,output,&keyb,iv,1);
+  SHA256(output,32,output);
   memcpy(tmp,this->state,32);
   AES_cbc_encrypt(this->key1,32,tmp,&keyb,iv,1);
   AES_cbc_encrypt(this->key2,32,this->key1,&keya,iv,1);
