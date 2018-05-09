@@ -4,6 +4,9 @@
 void waitForInterrupt();
 void startInteruptThread();
 
+
 void startSidedDeamonThread();
+
+void startup();
 
 #endif
