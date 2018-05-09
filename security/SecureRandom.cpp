@@ -35,6 +35,20 @@ SecureRandom::SecureRandom(){
   seeded = false;
 }
 
+void SecureRandom::generateBytes(uint8_t* output){
+  uint8_t tmp[32];
+  AESKEY keya;
+  AESKEY keyb;
+  AES_set_encrypt_key(this->key1,256,&keya);
+  AES_set_encrypt_key(this->key2,256,&keyb);
+  AES_cbc_encrypt(this->state,32,tmp,&keya,iv,1);
+  AES_cbc_encrypt(this->state,32,output,&keyb,iv,1);
+  memcpy(tmp,this->state,32);
+  AES_cbc_encrypt(this->key1,32,tmp,&keyb,iv,1);
+  AES_cbc_encrypt(this->key2,32,this->key1,&keya,iv,1);
+  memcpy(tmp,this->key2,32);
+}
+
 void SecureRandom::initSeed(uint8_t* seed,uint32_t length){
   uint8_t buffer[64];
   AESKEY key;
@@ -67,7 +81,17 @@ void SecureRandom::seed(){
 }
 
 void SecureRandom::nextBytes(uint8_t* out,size_t size){
+  uint8_t* buff;
+  size_t tsize = size;
+  size_t chunks;
+  while((tsize%32)!=0)tsize*=2;
+  buff = new uint8_t[tsize];
+  chunks = tsize/32;
   if(!seeded)
     seed();
-   
+   for(int i = 0;i<chunks;i++)
+     generateBytes(buff+(32*i));
+  while(tsize!=size)
+    reduce(buff,buff,tsize/=2);
+  memcpy(buff,out,size);
 }
