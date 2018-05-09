@@ -12,6 +12,7 @@ private:
   unsigned char iv[16];
   bool seeded;
   void initSeed(uint8_t*,uint32_t);
+  void generate(uint8_t(&)[32]);
 protected:
   unsigned int next(unsigned int);
 public:
