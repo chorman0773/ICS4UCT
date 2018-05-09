@@ -4,12 +4,18 @@
 #include "net/winsock2.h"
 #include "Config.hpp"
 #include <cstdlib>
-Client* client(nullptr);
-net::ClientBinding* binding;
-net::Connection* conn;
+#include <memory>
+
+using std::shared_ptr;
+
+shared_ptr<Client> client(nullptr);
+shared_ptr<net::ClientBinding> binding;
+shared_ptr<net::Connection> conn;
 
 Client& getClient(){
-	if(client==nullptr){
+	if(client.get()==nullptr){
+		binding.reset();
+		conn.reset();
 		SOCKET out;
 		Configuration cfg;
 		string addr = cfg.getHostname();
@@ -19,18 +25,12 @@ Client& getClient(){
 		inetSocketAddress.sin_addr.S_un = inet_addr(addr.c_str());
 		out = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 		//connect(out,(sockaddr*)&inetSocketAddress,sizeof(sockaddr_in));
-		conn = new net::Connection(out);
-		binding = new net::ClientBinding(*conn);
-		client = new Client(*binding);
-		atExit(exitHandler);
+		conn = std::make_shared<net::Connection>(out);
+		binding = std::make_shared<net::ClientBinding>(*conn);
+		client = std::make_shared<Client>(*binding);
 	}
 	return *client;
 }
 
-void exitHandler(int i){
-	delete client;
-	delete binding;
-	delete conn;
-}
 
 #endif
