@@ -29,3 +29,6 @@ File Directory
 			File					| 			Data From				|	Data To
 ===================================================================================================================
 1	Users' Data						|P3, P4, P6, P7, P10, P12			| P1, P6, P11
+
+
+(c) 2018, Connor Horman and Kyle Adomeit
