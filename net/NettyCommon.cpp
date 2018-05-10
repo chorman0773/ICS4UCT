@@ -254,7 +254,6 @@ PacketBuffer& operator=(const PacketBuffer& src){
 }
 
 void PacketBuffer::resize(int newSize){
-    i
     if(data==nullptr)
         data = new char[newSize];
     else{
