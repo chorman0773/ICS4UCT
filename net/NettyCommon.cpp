@@ -1,6 +1,8 @@
 #include "Netty.hpp"
 #include <functional>
 #include <cstring>
+#include <security/SecureRandom.hpp>
+
 using std::function;
 
 float fromRawIntBits(int bits){
@@ -326,4 +328,8 @@ void PacketBuffer::writeUtf(string s){
 Connection::Conection(SOCKET sock){
 	this->sock = sock;
 	this->latency = 0;
+}
+
+Connection::~Connection(){
+	close();
 }
