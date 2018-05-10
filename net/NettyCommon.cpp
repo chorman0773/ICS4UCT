@@ -17,6 +17,8 @@ uint64_t toRawLongBits(double d){
     return reinterpret_cast<uint64_t&>(d);
 }
 
+
+
 using namespace net;
 using namespace server;
 using namespace client;
@@ -81,6 +83,37 @@ function<Packet*()> ctors[] ={
     [](){
         return new SPacketDisconnect;
     }
+};
+
+class UniquePacketPointer : public Hashable{
+private:
+	Packet* pmrPacket;
+	bool wasHeapAllocated;
+public:
+	UniquePacketPointer(Packet& p){
+		pmrPacket = &p;
+		wasHeapAllocated = false;
+	}
+	UnqiuePacketPointer(int id){
+		pmrPacket = ctors[id]();
+		wasHeapAllocated = true;
+	}
+	~UnqiuePacketPointer(){
+		if(wasHeapAllocated)
+			delete pmrPacket;
+	}
+	Packet& operator*(){
+		return *pmrPacket;
+	}
+	Packet* operator->(){
+		return pmrPacket
+	}
+	operator Packet&(){
+		return *pmrPacket;
+	}
+	int32_t hashCode()const{
+		return pmrPacket->hashCode();
+	}
 };
 
 
@@ -221,6 +254,7 @@ PacketBuffer& operator=(const PacketBuffer& src){
 }
 
 void PacketBuffer::resize(int newSize){
+    i
     if(data==nullptr)
         data = new char[newSize];
     else{
@@ -287,4 +321,10 @@ void PacketBuffer::writeUtf(string s){
     writeInt(s.length());
     for(char c:s)
         writeByte(c);
+}
+
+
+Connection::Conection(SOCKET sock){
+	this->sock = sock;
+	this->latency = 0;
 }

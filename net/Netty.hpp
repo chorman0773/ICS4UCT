@@ -25,15 +25,16 @@ namespace net{
         void setClient(Client&);
         void disconnect(const string&);
     };
-
+	
+	
     
-
     class Packet : public Hashable{
     public:
         virtual void writeTo(PacketBuffer&)=0;
         virtual void readFrom(PacketBuffer&)=0;
         virtual int getId()const=0;
     };
+	
 
     class PacketBuffer{
         int size;
