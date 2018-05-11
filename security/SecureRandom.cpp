@@ -2,23 +2,7 @@
 #include <openssl/AES.h>
 #include <openssl/SHA.h>
 
-#ifdef __WIN32
-#define _CRT_RAND_S
-#include <stdlib.h>
-#else
-#include <cstdio>
-#endif
-void fillRandomBytes(uint8_t* bytes,uint32_t len){
-#ifdef __WIN32
-  uint32_t* buff = (uint32_t*)bytes;
-  for(int i = 0;i<len;i+=4)
-    rand_s(buff+i);
-#else
-  FILE* f = fopen("/dev/urandom");
-  fread(bytes,len,1,f);
-  fclose(f);
-#endif
-}
+#include <random>
 
 uint64_t rot(uint64_t r,int val){
   return r>>val|(r<<(64-val));
@@ -73,13 +57,15 @@ void SecureRandom::setSeed(uint64_t seed){
   expand[2] = rot(seed,31)^rot(seed,13)^rot(expand[1],47);
   for(int i = 3;i<sizeof(expanded)/sizeof(uint64_t);i++)
     expand[i] = rot(seed,31)^rot(expanded[i-1],13)^rot(expanded[i-2],47);
-   initSeed((uint8_t*)expanded,sizeof(expanded));
+   initSeed(reinterpret_cast<uint8_t*>(expanded),sizeof(expanded));
 }
 
 void SecureRandom::seed(){
-  uint8_t data[128];
-  fillRandomBytes(data,sizeof(data));
-  initSeed(data,sizeof(data));
+  uint32_t data[32];
+  std::random_device rd;
+  for(unsigned int i = 0;i<sizeof(data)/sizeof(uint32_t);i++)
+     data[i] = rd();
+  initSeed(reinterpret_cast<uint8_t*>(data),sizeof(data));
 }
 
 void SecureRandom::nextBytes(uint8_t* out,size_t size){
