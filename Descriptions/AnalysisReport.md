@@ -1,10 +1,10 @@
 						CULMINATING TASK Analysis Report
 #Proposed System
 The System is a general purpose Employee Management, Payroll, and Status Control System.
-It tracks when Employees are online, and allows them to change there status or go offline.
+It tracks when Employees are online, and allows them to change their status or go offline.
 The tracking works remotely by connecting to the internet over a secure channel.
 The features can be customized on a case-by-case basis.
-The system is menu driven at all levels, and the menu selection can be change with W or Up Arrow (Up), and D or Down Arrow (Down),
+The system is menu driven at all levels, and the menu selection can be changed with W or Up Arrow (Up), and D or Down Arrow (Down),
 And the selection is confirmed with enter.
 
 
