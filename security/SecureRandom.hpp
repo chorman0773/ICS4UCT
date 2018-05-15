@@ -4,7 +4,7 @@
 #include <Random.hpp>
 #include <cstdint>
 
-class SecureRandom: final Random{
+class SecureRandom final: public Random{
 private:
   unsigned char key1[32];
   unsigned char key2[32];
@@ -12,7 +12,7 @@ private:
   unsigned char iv[16];
   bool seeded;
   void initSeed(uint8_t*,uint32_t);
-  void generate(uint8_t(&)[32]);
+  void generateBytes(uint8_t*);
 protected:
   unsigned int next(unsigned int);
 public:
