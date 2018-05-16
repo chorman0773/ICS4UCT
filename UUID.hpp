@@ -29,7 +29,7 @@ public:
 
 ostream& operator<<(ostream&,const UUID&);
 istream& operator>>(istream&,UUID&);
-string&  operator+(string&,const UUID&);
+string  operator+(const string&,const UUID&);
 
 
 
