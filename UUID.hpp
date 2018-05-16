@@ -1,3 +1,5 @@
+#ifndef __UUID_hpp_2018_05_16_08_22
+#define __UUID_hpp_2018_05_16_08_22
 #include <string>
 #include <cstdint>
 #include "Hash.hpp"
@@ -31,3 +33,4 @@ string&  operator+(string&,const UUID&);
 
 
 
+#endif
