@@ -1,3 +1,5 @@
+#ifndef __JTime_hpp_2018_05_16_08_23
+#define __JTime_hpp_2018_05_16_08_23
 #include "Hash.hpp"
 #include <stdint.h>
 
@@ -316,3 +318,4 @@ public:
 const Duration ZERO = Duration::ofSeconds(0);
 const Duration MAX_DURATION = Duration::ofSeconds(9223372036854775807,999999999);
 const Duration MIN_DURATION = Duration::ofSeconds(-9223372036854775808);
+#endif
