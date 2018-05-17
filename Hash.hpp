@@ -8,6 +8,7 @@
 #include <memory>
 #include <utility>
 #include <map>
+#include <array>
 class Hashable{
 public:
 	virtual int hashCode()const = 0;
@@ -77,5 +78,9 @@ template<typename K,typename V> int32_t hashcode(const map<K,V>& m){
 	return hash;
 }
 
+template<typename E> int32_t hashcode(typename std::enable_if<std::is_enum<E>::value,E>::type e){
+	decltype(auto) val = reinterpret_cast<typename std::underlying_type<E>::type>(e);
+	return hashcode<decltype(val)>(val);
+}
 
 #endif

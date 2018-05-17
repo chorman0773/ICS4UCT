@@ -17,7 +17,6 @@ Random uuidRandom;
 
 using std::string;
 using std::stoull;
-using std::setbase;
 using std::ostringstream;
 using std::ostream;
 using std::istream;
@@ -79,7 +78,7 @@ ostream& operator<<(ostream& o,const UUID& id){
 	return o;
 }
 
-string UUID::toString(){
+string UUID::toString()const{
 	ostringstream str;
 	str<<*this;
 	return str.str();
@@ -93,7 +92,7 @@ istream& operator>>(istream& i,UUID& id){
 }
 
 string operator+(const string& s,const UUID& id){
-	return s+id.toString();
+	return s+(id.toString());
 }
 
 Instant UUID_EPOCH = Instant::fromEpochSecond(-12244089600);
@@ -101,9 +100,10 @@ Instant UUID_EPOCH = Instant::fromEpochSecond(-12244089600);
 UUID UUID::ofNow(){
 	Instant now = Instant::now();
 	Duration d = Duration::between(UUID_EPOCH, now);
-	int64_t ts = d.getSeconds()*10000000+d.getNanos()/100;
-	int64_t rnode = (uuidRandom.nextLong()&0x7FFFFFFFFFFF)|0x800000000000;
-	int64_t low = rnode|(0xE000|(d.hashCode()&0xCFFF))<<56LL;
-	int64_t high = (ts&0xFFFFFFFF)<<32|((ts>>32)&0xFFFF)<<16|0x1000|((ts>>48)&0xFFF);
+	uint64_t ts = d.getSeconds()*10000000+d.getNanos()/100;
+	uint64_t rnode = (uuidRandom.nextLong()&0x7FFFFFFFFFFF)|0x800000000000;
+	uint64_t low = rnode|((uint64_t)(0xE000|(d.hashCode()&0xCFFF)))<<56LL;
+	uint64_t high = (ts&0xFFFFFFFF)<<32|((ts>>32)&0xFFFF)<<16|0x1000|((ts>>48)&0xFFF);
 	return UUID(high,low);
 }
+

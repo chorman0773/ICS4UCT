@@ -3,9 +3,6 @@
 #pragma once
 #include <iostream>
 #include <string>
-extern "C"{
-#include <conio.h>
-};
 #include <vector>
 
 

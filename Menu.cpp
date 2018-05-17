@@ -1,6 +1,6 @@
 #include "Menu.hpp"
 #include "Random.hpp"
-
+#include "getch.h"
 #include <iostream>
 using std::cin;
 
