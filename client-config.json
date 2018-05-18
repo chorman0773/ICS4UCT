@@ -1,0 +1,14 @@
+{
+	"host":{
+		"name":"69.58.110.132",
+		"port":62661
+	},
+	"path":{
+		"db":"main.cdb",
+		"users":"users"
+	},
+	"version":{
+		"current":"1.0",
+		"minimum":"1.0"
+	}
+}
