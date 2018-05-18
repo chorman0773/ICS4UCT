@@ -5,19 +5,20 @@
 #include <istream>
 #include <cstdlib>
 
+
 using std::string;
 using std::ifstream;
 using std::ios;
 
 string getExecutablePath(){
-    return getenv("__APPDIR__");
+    return getenv("PWD");
 }
 
 string readFully(ifstream& strm){
     string ret;
-    string tmp
+    string tmp;
     while(strm.eof()){
-        strm.getline(tmp);
+        std::getline(strm,tmp);
         ret += tmp;
     }
     return ret;
@@ -29,10 +30,10 @@ Configuration::Configuration(){
 
 void Configuration::reload(){
     ifstream strm;
-    strm.open(getExecutablePath()+CFG_FILE,ios::read);
-    string json = readFully(strm);
-    if(!parse(json,cfg))
-        throw"Failed to initialize configuration, json parsing failed";
+    strm.open(CFG_FILE,ios::in);
+	if(!strm.is_open())
+		throw"Could not open database, file does not exist";
+    strm >> cfg;
 }
 
 const Json::Value& Configuration::getConfig()const{
@@ -42,41 +43,41 @@ const Json::Value& Configuration::getConfig()const{
 string Configuration::getHostname()const{
     Json::Value host = cfg["host"];
     if(host.isNull())
-        throw"Hostname not found";
-    Json::Value name = cfg["name"];
+        throw"Host block not found";
+    Json::Value name = host["name"];
     if(name.isNull())
-        throw"Hostname not found";
+        throw"Host name not found";
     return name.asString();
 }
 
 int Configuration::getPort()const{
     Json::Value host = cfg["host"];
     if(host.isNull())
-        throw"Port not found";
-    Json::Value port = cfg["port"];
+        throw"Host block not found";
+    Json::Value port = host["port"];
     if(port.isNull())
         throw"Port not found";
-    return port.asInteger();
+	return port.asInt();
 };
 
-string Configuration::getDatabaseRef(){
+string Configuration::getDatabaseRef()const{
     Json::Value path = cfg["path"];
     if(path.isNull())
         throw"Database path not found";
     Json::Value database = path["db"];
     if(database.isNull())
         throw"Database path not found";
-    string target = "sqlite:"+getExecutablePath()+database.asString();
+    string target = "sqlite:"+database.asString();
     return target;
 }
 
-string Configuration::getPrivateKeyFile(const UUID& id){
+string Configuration::getPrivateKeyFile(const UUID& id)const{
     Json::Value path = cfg["path"];
     if(path.isNull())
         throw"Users Directory not found";
     Json::Value userPath = path["users"];
     if(userPath.isNull())
         throw"Users Directory not found";
-    string path = getExecutablePath()+userPath+"/PRIVKEY-"+id;
-    return path;
+	string privkeyPath = userPath.asString()+"/PRIVKEY-"+id;
+    return privkeyPath;
 }
