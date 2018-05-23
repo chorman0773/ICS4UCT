@@ -92,13 +92,13 @@ Socket& Socket::operator<<(long long l){
     send(sock,&val[0],sizeof(l),0);
 }
 
-Socket& Socket::operator<<(UUID& u){
+Socket& Socket::operator<<(const UUID& u){
     uint64_t low = u.getLow();
     uint64_t high = u.getHigh();
     return (*this)<<high<<low;
 }
 
-Socket& Socket::operator<<(Version v){
+Socket& Socket::operator<<(const Version& v){
     char ver[2];
     ver[0] = (v.getMajor()-1)&0xff;
     ver[1] = v.getMinor()&0xff;
