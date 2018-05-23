@@ -6,6 +6,7 @@ extern "C"{
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
+typedef decltype(socket(0,0,0)) SOCKET;
 #endif
 };
 #include <vector>
