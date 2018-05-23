@@ -40,7 +40,7 @@ public:
     Socket& operator<<(long long);
     Socket& operator<<(const string&);
     Socket& operator<<(const char*);
-    Socket& operator<<(Version);
+    Socket& operator<<(const Version&);
     Socket& operator<<(const UUID&);
     Socket& operator>>(char&);
     Socket& operator>>(unsigned char&);
