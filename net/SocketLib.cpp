@@ -1,6 +1,6 @@
 #include "SocketLib.hpp"
-#include "../UUID.hpp"
-#include "../Version.hpp"
+#include <UUID.hpp>
+#include <Version.hpp>
 
 void toBE(unsigned int i,char (&out)[4]){
     out[0] = (i>>24)&0xff;
