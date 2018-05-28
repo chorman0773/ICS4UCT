@@ -52,10 +52,30 @@ template<typename E> class EnumSet{
     
 public:
     EnumSet():map(0){}
-    EnumSet(const initializer_list<E>& e){
+    EnumSet(E val1):map(0){
+       add(val1);
+    }
+    EnumSet(E val1,E val2):map(0){
+        add(val1);
+        add(val2);
+    }
+    EnumSet(E val1,E val2,E val3):map(0){
+      add(val1);
+      add(val2);
+      add(val3);
+    }
+    template<size_t N> EnumSet(E(&vals)[N]){
+      for(E v:vals)
+          add(v);
+    }
+    template<size_t N> EnumSet(array<E,N>& vals){
+     for(E v:vals)
+        add(v);
+    }
+    /*EnumSet(const initializer_list<E>& e){
         for(E v:e)
             add(v);
-    }
+    }*/
     EnumSet(uint64_t map):map(map){}
     bool add(value_type v){
         if(contains(v))
