@@ -66,12 +66,12 @@ template<typename T,typename U> int32_t hashcode(const pair<T,U>& p){
 	return hashcode(p.first)*31+hashcode(p.second);
 }
 
-template<typename T> int32_t hashcode(const pair<T*,int>& a){
+template<typename T> int32_t hashcode(const pair<T*,size_t>& a){
 	//Treat as array not as pair
 	int32_t h = 0;
-	for(int i =0;i<a.second;i++){
+	for(int i =0;i<a.second();i++){
 		h*=31;
-		h+=hashcode(a.second()[i]);
+		h+=hashcode(a.first()[i]);
 	}
 	return h;
 }
