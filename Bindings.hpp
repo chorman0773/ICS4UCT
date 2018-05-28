@@ -43,7 +43,8 @@ public:
 	bool hasPermission(Permission)const;
 	void addPermission(Permission);
 	void removePermission(Permission);
-	void getSalt(unsigned char*)const;
+	void getSalt(unsigned char(&)[32])const;
+	void getHash(unsigned char(&)[32])const;
 	AuthenticationResult authenticate(const string&);
 	void setStatus(Status);
 	const UUID& getUUID()const;
