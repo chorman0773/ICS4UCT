@@ -37,7 +37,7 @@ class Employee : public Hashable{
 public:
 	Employee();
 	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
-	static Employee newEmployee(const string&,double);
+	static Employee newEmployee(const string&,double,const string&);
 	int32_t hashCode()const;
 	const string& getName()const;
 	bool hasPermission(Permission)const;
