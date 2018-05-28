@@ -1,5 +1,5 @@
-#ifndef __Hash_hp_2018_03_23_09_48
-#define __Hash_hp_2018_03_23_09_48
+#ifndef __Hash_hpp_2018_03_23_09_48
+#define __Hash_hpp_2018_03_23_09_48
 #pragma once
 #include <cstdint>
 #include <type_traits>
