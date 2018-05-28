@@ -29,7 +29,7 @@ template<typename T> int32_t hashcode(const vector<T>& v){
 
 using std::array;
 
-template<typename T,int size>  int32_t hashcode(const array<T,size>& a){
+template<typename T,size_t size>  int32_t hashcode(const array<T,size>& a){
 	int32_t h = 0;
 	for(int i = 0;i<size;i++){
 		h*=31;
@@ -37,6 +37,15 @@ template<typename T,int size>  int32_t hashcode(const array<T,size>& a){
 	}
 	return h;
 } 
+
+template<typename T,size_t size> int32_t hashcode(const T(&a)[size]){
+	int32_t h = 0;
+	for(auto&& val:a){
+		h*=31;
+		h+=hashcode(val);
+	}
+	return h;
+}
 
 using std::unique_ptr;
 using std::shared_ptr;
