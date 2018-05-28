@@ -22,27 +22,29 @@ enum class Status{
 	OFFLINE, AWAY, ONLINE
 };
 
+enum class AuthenticationResult{
+	FAIL, SUCCESS, SUCCESS_ADMIN
+};
+
 class Employee : public Hashable{
 	string name;
 	UUID id;
 	double salary;
-	unsigned char iv[16];
 	unsigned char salt[32];
-	unsigned char pubKey[128];
+	unsigned char hash[32];
 	EnumSet<Permission> permissions;
 	Status s;
 public:
 	Employee();
-	Employee(const string&,const UUID&,double,const unsigned char(&)[16],const unsigned char(&)[32],const unsigned char(&)[128],const EnumSet<Permission>&);
+	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
 	static Employee newEmployee(const string&,double);
 	int32_t hashCode()const;
 	const string& getName()const;
 	bool hasPermission(Permission)const;
 	void addPermission(Permission);
 	void removePermission(Permission);
-	void getIv(unsigned char*)const;
 	void getSalt(unsigned char*)const;
-	void getPublicKey(unsigned char*)const;
+	AuthenticationResult authenticate(const string&);
 	void setStatus(Status);
 	const UUID& getUUID()const;
 	Status getStatus()const;
