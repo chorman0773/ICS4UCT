@@ -50,6 +50,7 @@ public:
 	const UUID& getUUID()const;
 	Status getStatus()const;
 	double getPay()const;
+	void setPay(double);
 	const EnumSet<Permission>& getPermissions()const;
 	bool operator==(const Employee&)const;
 	bool operator!=(const Employee&)const;
