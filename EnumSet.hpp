@@ -7,7 +7,7 @@
 #include <initializer_list>
 #include "Hash.hpp"
 
-template<typename E> class EnumSet{
+template<typename E> class EnumSet:public Hashable{
     static_assert(std::is_enum<E>::value,"Enum Set cannot be used except by an enum");
     typedef E value_type;
     typedef std::underlying_type<E>::type underlying_type;
