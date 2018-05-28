@@ -23,7 +23,7 @@ enum class Status{
 };
 
 enum class AuthenticationResult{
-	FAIL, SUCCESS, SUCCESS_ADMIN
+	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN
 };
 
 class Employee : public Hashable{
