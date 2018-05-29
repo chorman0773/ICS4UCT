@@ -12,6 +12,44 @@ int rotate(int val,int by){
   return val>>(by)|val<<(32-by);
 }
 
+bool operator< (Status a,Status b){
+ if(a==b)
+   return false;
+  switch(a){
+    case OFFLINE:
+      return true;
+    break;
+    case AWAY:
+      return b!=OFFLINE;
+    break;
+    case ONLINE:
+      return false;
+    break;
+  }
+}
+
+bool operator> (Status a,Status b){
+ if(a==b)
+   return false;
+  switch(a){
+    case OFFLINE:
+      return false;
+    break;
+    case AWAY:
+      return b==OFFLINE;
+    break;
+    case ONLINE:
+      return true;
+    break;
+  }
+}
+bool operator>=(Status a,Status b){
+ return a==b||a>b; 
+}
+
+bool operator<=(Status a,Status b){
+ return a==b||a<b; 
+}
 
    int h[8] = {0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5};
 
@@ -82,7 +120,7 @@ unsigned char* salt(const unsigned char* pwd,unsigned int size,const unsigned ch
 
 Employee::Employee(){}
 Employee::Employee(const string& name,const UUID& id,double salary,const unsigned char (&salt)[32],const unsigned char (&hash)[32],
-  const EnumSet<Permission>& permissions):name(name),id(id),salary(salary),salt(salt),hash(hash),permissions(permissions),s(OFFLINE){}
+  const EnumSet<Permission>& permissions):name(name),id(id),salary(salary),salt(salt),hash(hash),permissions(permissions),s(OFFLINE),dirty(false){}
 
 Employee Employee::newEmployee(const string& name,double salary,const string& pwd){
   const unsigned char salt[32];
@@ -95,7 +133,7 @@ Employee Employee::newEmployee(const string& name,double salary,const string& pw
  RAND_bytes(salt,32);
  saltedPwd = salt(pwd.c_str(),pwd.length(),salt);
  SHA256(saltedPwd,outSize,hash);
- delete[] saltedPwd;
+ delete[] saltedPwd; 
  return Employee(name,id,salary,salt,hash,EnumSet<Permission>(Permission::AUTH));
 }
 
@@ -121,10 +159,12 @@ bool Employee::hasPermission(Permission p)const{
 }
 
 void Employee::addPermission(Permission p){
+  markDirty();
   permissions.add(p);
 }
 
 void Employee::removePermission(Permission p){
+  markDirty();
   permissions.remove(p);
 }
 
@@ -139,14 +179,158 @@ void Employee::getHash(unsigned char(&out)[32])const{
 AuthenticationResult Employee::authenticate(const string& s){
   int outSize = name.length()+32-(name.length()%32);
   const char buffer[32];
-  if(!permissions.contains(Permission::AUTH))
-    return AuthenticationResult::FAIL_CANT_AUTHENTICATE;
+  
   const char* saltedPwd = salt(s.c_str(),s.length(),salt);
   SHA256(saltedPwd,outSize,buffer);
   if(memcmp(hash,buffer,32)!=0)
     return AuthenticationResult::FAIL_BAD_PASSWORD;
+  else if(!permissions.contains(Permission::AUTH))
+    return AuthenticationResult::FAIL_CANT_AUTHENTICATE;
   else if(permissions.contains(Permission::ADMIN))
     return AuthenticationResult::SUCCESS_ADMIN;
   else
     return AuthenticationResult::SUCCESS;
 }
+
+void Employee::setPassword(const string& pwd){
+  const unsigned char salt[32];
+  const unsigned char hash[32];
+  const unsigned char* saltedPwd;
+  UUID id = UUID::ofNow();
+  int outSize = name.length()+32-(name.length()%32);
+  if(RAND_status()==0)
+    seedSystemRandom();
+  RAND_bytes(salt,32);
+  saltedPwd = salt(pwd.c_str(),pwd.length(),salt);
+  SHA256(saltedPwd,outSize,hash);
+  delete[] saltedPwd; 
+  memcpy(this->salt,salt,32);
+  memcpy(this->hash,hash,32);
+  markDirty();
+}
+
+AuthenticationResult Employee::changePassword(const string& currPwd,const string& newPwd){
+  if(authenticate(currPwd)==AuthenticationResult::FAIL_BAD_PASSWORD)
+    return AuthenticationResult::FAIL_BAD_PASSWORD;
+  else if(newPwd.length()<8)
+    return AuthenticationResult::NEW_PASSWORD_NOT_VALID;
+  setPassword(newPwd);
+  return AuthenticationResult::PASSWORD_CHANGED;
+}
+
+const UUID& Employee::getUUID()const{
+ return id; 
+}
+
+Status Employee::getStatus()const{
+ return s; 
+}
+
+double Employee::getPay()const{
+ return salary; 
+}
+
+const EnumSet<Permissions>& Employee::getPermissions()const{
+ return permissions; 
+}
+
+void Employee::setPay(double salary){
+ this->salary = salary; 
+ markDirty();
+}
+
+bool Employee::operator==(const Employee& o)const{
+ return id==o.id; 
+}
+
+bool Employee::operator!=(const Employee& o)const{
+ return id!=o.id; 
+}
+
+bool Employee::operator< (const Employee& o)const{
+ return s<o.s||(s==o.s&&name<o.name); 
+}
+
+bool Employee::operator> (const Employee& o)const{
+ return s>o.s||(s==o.s&&name>o.name); 
+}
+
+bool Employee::operator>=(const Employee& o)const{
+ return *this>o||*this==o; 
+}
+
+bool Employee::operator<=(const Employee& o)const{
+ return *this<o||*this==o; 
+}
+
+void Employee::markDirty(){
+ dirty = true; 
+}
+void Employee::markClean(){
+ dirty = false; 
+}
+
+bool Employee::isDirty()const{
+ return dirty; 
+}
+
+Employees::Employees(){}
+
+void Employees::load(){
+ //TODO 
+}
+void Employees::save()const{
+ //TODO 
+}
+
+void Employees::removeEmployee(const UUID& u){
+ //TODO 
+}
+
+const UUID& Employees::addEmployee(const string& name,double salary,const string& pwd){
+ Employee toAdd = Employee::newEmployee(name,salary,pwd);
+ return addEmployee(toAdd);
+}
+
+const UUID& Employees::addEmployee(const Employee& e){
+ employeeRegistry.push_back(e);
+ return employeeRegistry.back().getUUID();
+}
+
+Employee& Employees::getEmployee(const UUID& u){
+ return employeeMap[u]; 
+}
+
+Employees::iterator Employees::begin(){
+ return employeeRegistry.begin(); 
+}
+
+Employees::const_iterator Employees::begin()const{
+ return employeeRegistry.begin(); 
+}
+
+Employees::iterator Employees::end(){
+ return employeeRegistry.end(); 
+}
+
+Employees::const_iterator Employees::end()const{
+ return employeeRegistry.end(); 
+}
+
+int Employees::length()const{
+ return employeeRegistry.size(); 
+}
+
+int Employees::hashCode()const{
+  int hash = 0;
+  const int prime = 31;
+  for(const Employee& e:employeeRegistry){
+   hash *= prime;
+   hash += e.hashCode();
+  }
+}
+
+void Employees::sort(){
+ //TODO 
+}
+
