@@ -82,7 +82,7 @@ public:
 	void load();
 	void save()const;
 	void removeEmployee(const UUID&);
-	const UUID& addEmployee(const string&,double);
+	const UUID& addEmployee(const string&,double,const string&);
 	void addEmployee(const Employee&);
 	Employee& getEmployee(const UUID&);
 	iterator begin();
