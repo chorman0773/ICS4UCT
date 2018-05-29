@@ -62,6 +62,7 @@ public:
 	AuthenticationResult changePassword(const string&);
 	void markDirty();
 	void markClean();
+	bool isDirty()const;
 	void setPassword(const string&);
 	bool operator==(const Employee&)const;
 	bool operator!=(const Employee&)const;
