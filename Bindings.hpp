@@ -40,6 +40,7 @@ class Employee : public Hashable{
 	unsigned char hash[32];
 	EnumSet<Permission> permissions;
 	Status s;
+	bool dirty;
 public:
 	Employee();
 	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
@@ -59,6 +60,8 @@ public:
 	void setPay(double);
 	const EnumSet<Permission>& getPermissions()const;
 	AuthenticationResult changePassword(const string&);
+	void markDirty();
+	void markClean();
 	void setPassword(const string&);
 	bool operator==(const Employee&)const;
 	bool operator!=(const Employee&)const;
