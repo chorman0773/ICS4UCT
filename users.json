@@ -1,0 +1,17 @@
+{
+  "users":[
+    {
+      "id":"00000000-0000-0000-0000-000000000000",
+      "name":"dummy",
+      "permissions":0,
+      "salary":0.0,
+      "salt":"9iRRA8DISLyoEZqvy3Es6Yx2K421TLriO0994pNFzog="
+    },
+    {
+      "id":"94266c20-62e9-11e8-adc0-fa7ae01bbebc",
+      "name":"sysadmin",
+      "permissions":65,
+      "salt":"jJVTn/6J29nSe/pf8gJUKp1AYA40BpchAsFqoleeSJo="
+    }
+  ]
+}
