@@ -23,7 +23,8 @@ enum class Status{
 };
 
 enum class AuthenticationResult{
-	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN
+	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
+	PASSWORD_CHANGED
 };
 
 class Employee : public Hashable{
@@ -52,6 +53,8 @@ public:
 	double getPay()const;
 	void setPay(double);
 	const EnumSet<Permission>& getPermissions()const;
+	AuthenticationResult changePassword(const string&);
+	void setPassword(const string&);
 	bool operator==(const Employee&)const;
 	bool operator!=(const Employee&)const;
 	bool operator<=(const Employee&)const;
