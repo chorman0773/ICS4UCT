@@ -22,6 +22,11 @@ enum class Status{
 	OFFLINE, AWAY, ONLINE
 };
 
+bool operator< (Status,Status);
+bool operator> (Status,Status);
+bool operator<=(Stauts,Status);
+bool operator>=(Status,Status);
+
 enum class AuthenticationResult{
 	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
 	PASSWORD_CHANGED, NEW_PASSWORD_NOT_VALID
