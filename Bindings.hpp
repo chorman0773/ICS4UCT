@@ -24,7 +24,7 @@ enum class Status{
 
 enum class AuthenticationResult{
 	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
-	PASSWORD_CHANGED
+	PASSWORD_CHANGED, NEW_PASSWORD_NOT_VALID
 };
 
 class Employee : public Hashable{
