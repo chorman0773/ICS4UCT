@@ -25,6 +25,8 @@ public:
 	uint64_t getLow()const;
 	int32_t hashCode()const;
 	string toString()const;
+	bool operator==(const UUID&)const;
+	bool operator!=(const UUID&)const;
 };
 
 ostream& operator<<(ostream&,const UUID&);

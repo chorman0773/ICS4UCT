@@ -107,3 +107,11 @@ UUID UUID::ofNow(){
 	return UUID(high,low);
 }
 
+bool UUID::operator==(const UUID& u)const{
+	return high==u.high&&low==u.low;
+}
+
+bool UUID::operator!=(const UUID& u)const{
+	return high!=u.high||low!=u.low;
+}
+

@@ -1,11 +1,13 @@
 #include "Bindings.hpp"
-#include <openssl/rand.hpp>
-#include <openssl/sha.hpp>
+#include <openssl/rand.h>
+#include <openssl/sha.h>
 #include <UUID.hpp>
 #include <Hash.hpp>
 #include <random>
 
 #include <cstring>
+
+using std::random_device;
 
 int rotate(int val,int by){
   by &=31;
@@ -13,16 +15,16 @@ int rotate(int val,int by){
 }
 
 bool operator< (Status a,Status b){
- if(a==b)
-   return false;
-  switch(a){
-    case OFFLINE:
+	if(a==b)
+		return false;
+	switch(a){
+	case Status::OFFLINE:
       return true;
     break;
-    case AWAY:
-      return b!=OFFLINE;
+    case Status::AWAY:
+      return b!=Status::OFFLINE;
     break;
-    case ONLINE:
+    case Status::ONLINE:
       return false;
     break;
   }
@@ -32,13 +34,13 @@ bool operator> (Status a,Status b){
  if(a==b)
    return false;
   switch(a){
-    case OFFLINE:
+    case Status::OFFLINE:
       return false;
     break;
-    case AWAY:
-      return b==OFFLINE;
+    case Status::AWAY:
+      return b==Status::OFFLINE;
     break;
-    case ONLINE:
+    case Status::ONLINE:
       return true;
     break;
   }
@@ -110,9 +112,9 @@ void seedSystemRandom(){
   }while(RAND_status()==0);
 }
 
-unsigned char* salt(const unsigned char* pwd,unsigned int size,const unsigned char salt(&)[32]){
+unsigned char* saltPwd(const unsigned char* pwd,unsigned int size,const unsigned char (&salt)[32]){
   int outSize = size+32-(size%32);
-  char* ret = new char[outSize];
+  unsigned char* ret = new unsigned char[outSize];
   for(int i = 0;i<outSize;i++)
     ret[i] = pwd[i%size]^salt[i%32];
   return ret;
@@ -120,21 +122,24 @@ unsigned char* salt(const unsigned char* pwd,unsigned int size,const unsigned ch
 
 Employee::Employee(){}
 Employee::Employee(const string& name,const UUID& id,double salary,const unsigned char (&salt)[32],const unsigned char (&hash)[32],
-  const EnumSet<Permission>& permissions):name(name),id(id),salary(salary),salt(salt),hash(hash),permissions(permissions),s(OFFLINE),dirty(false){}
+  const EnumSet<Permission>& permissions):name(name),id(id),salary(salary),permissions(permissions),s(Status::OFFLINE),dirty(false){
+	  memcpy(this->salt,salt,32);
+	  memcpy(this->hash,hash,32);
+}
 
 Employee Employee::newEmployee(const string& name,double salary,const string& pwd){
-  const unsigned char salt[32];
-  const unsigned char hash[32];
-  const unsigned char* saltedPwd;
-  UUID id = UUID::ofNow();
-  int outSize = name.length()+32-(name.length()%32);
-  if(RAND_status()==0)
-    seedSystemRandom();
- RAND_bytes(salt,32);
- saltedPwd = salt(pwd.c_str(),pwd.length(),salt);
- SHA256(saltedPwd,outSize,hash);
- delete[] saltedPwd; 
- return Employee(name,id,salary,salt,hash,EnumSet<Permission>(Permission::AUTH));
+	unsigned char salt[32];
+	unsigned char hash[32];
+	const unsigned char* saltedPwd;
+	UUID id = UUID::ofNow();
+	int outSize = name.length()+32-(name.length()%32);
+	if(RAND_status()==0)
+		seedSystemRandom();
+	RAND_bytes(salt,32);
+	saltedPwd = saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
+	SHA256(saltedPwd,outSize,hash);
+	delete[] saltedPwd; 
+	return Employee(name,id,salary,salt,hash,EnumSet<Permission>(Permission::AUTH));
 }
 
 int32_t Employee::hashCode()const{
@@ -178,30 +183,30 @@ void Employee::getHash(unsigned char(&out)[32])const{
 
 AuthenticationResult Employee::authenticate(const string& s){
   int outSize = name.length()+32-(name.length()%32);
-  const char buffer[32];
+  unsigned char buffer[32];
   
-  const char* saltedPwd = salt(s.c_str(),s.length(),salt);
+  const unsigned char* saltedPwd = saltPwd((const unsigned char*) s.c_str(),s.length(),salt);
   SHA256(saltedPwd,outSize,buffer);
   if(memcmp(hash,buffer,32)!=0)
     return AuthenticationResult::FAIL_BAD_PASSWORD;
   else if(!permissions.contains(Permission::AUTH))
     return AuthenticationResult::FAIL_CANT_AUTHENTICATE;
-  else if(permissions.contains(Permission::ADMIN))
+  else if(permissions.contains(Permission::ADMINISTRATOR))
     return AuthenticationResult::SUCCESS_ADMIN;
   else
     return AuthenticationResult::SUCCESS;
 }
 
 void Employee::setPassword(const string& pwd){
-  const unsigned char salt[32];
-  const unsigned char hash[32];
-  const unsigned char* saltedPwd;
+  unsigned char salt[32];
+  unsigned char hash[32];
+  unsigned char* saltedPwd;
   UUID id = UUID::ofNow();
   int outSize = name.length()+32-(name.length()%32);
   if(RAND_status()==0)
     seedSystemRandom();
   RAND_bytes(salt,32);
-  saltedPwd = salt(pwd.c_str(),pwd.length(),salt);
+  saltedPwd = saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
   SHA256(saltedPwd,outSize,hash);
   delete[] saltedPwd; 
   memcpy(this->salt,salt,32);
@@ -230,7 +235,7 @@ double Employee::getPay()const{
  return salary; 
 }
 
-const EnumSet<Permissions>& Employee::getPermissions()const{
+const EnumSet<Permission>& Employee::getPermissions()const{
  return permissions; 
 }
 
@@ -289,12 +294,13 @@ void Employees::removeEmployee(const UUID& u){
 
 const UUID& Employees::addEmployee(const string& name,double salary,const string& pwd){
  Employee toAdd = Employee::newEmployee(name,salary,pwd);
- return addEmployee(toAdd);
+ addEmployee(toAdd);
+ return getEmployee(toAdd.getUUID()).getUUID();
 }
 
-const UUID& Employees::addEmployee(const Employee& e){
+void Employees::addEmployee(const Employee& e){
  employeeRegistry.push_back(e);
- return employeeRegistry.back().getUUID();
+ 
 }
 
 Employee& Employees::getEmployee(const UUID& u){

@@ -24,7 +24,7 @@ enum class Status{
 
 bool operator< (Status,Status);
 bool operator> (Status,Status);
-bool operator<=(Stauts,Status);
+bool operator<=(Status,Status);
 bool operator>=(Status,Status);
 
 enum class AuthenticationResult{
@@ -59,7 +59,7 @@ public:
 	double getPay()const;
 	void setPay(double);
 	const EnumSet<Permission>& getPermissions()const;
-	AuthenticationResult changePassword(const string&);
+	AuthenticationResult changePassword(const string&,const string&);
 	void markDirty();
 	void markClean();
 	bool isDirty()const;
