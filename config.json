@@ -3,7 +3,7 @@
         "user":"users.json",
         "audits":"audits.cdb",
         "products":"products.json",
-        "requistions:"requistions.cdb",
+        "requistions":"requistions.cdb",
         "receipts":"receipts.cdb"
     }
 }
