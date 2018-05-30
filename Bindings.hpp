@@ -75,9 +75,10 @@ public:
 class Employees:public Hashable{
 	map<UUID,Employee> employeeMap;
 	vector<Employee> employeeRegistry;
+public:
 	typedef vector<Employee>::iterator iterator;
 	typedef vector<Employee>::const_iterator const_iterator;
-public:
+	typedef Employee type;
 	Employees();
 	void load();
 	void save()const;
@@ -85,6 +86,7 @@ public:
 	const UUID& addEmployee(const string&,double,const string&);
 	void addEmployee(const Employee&);
 	Employee& getEmployee(const UUID&);
+	const Employee& getEmployee(const UUID&)const;
 	iterator begin();
 	const_iterator begin()const;
 	iterator end();
