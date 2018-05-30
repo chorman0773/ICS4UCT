@@ -1,9 +1,11 @@
 #include "Bindings.hpp"
 #include <openssl/rand.h>
 #include <openssl/sha.h>
+#include <sqlite3/sqlite3.h>
 #include <UUID.hpp>
 #include <Hash.hpp>
 #include <random>
+#include <Base64.hpp>
 
 #include <cstring>
 
@@ -83,7 +85,7 @@ void seedSystemRandom(){
     int j = h[7];
 
     
-    for(int i = 0;<16;i++)
+    for(int i = 0;i<16;i++)
       words[i] ^= dev();
     for(int i = 16;i<64;i++){
       int val1 = rotate(words[i-15],5)^rotate(words[i-16],7)^rotate(words[i-15],17)^0xB7E15162;
@@ -281,15 +283,84 @@ bool Employee::isDirty()const{
 
 Employees::Employees(){}
 
+
+
 void Employees::load(){
- //TODO 
+	sqlite3* db;
+	sqlite3_stmt* stat;
+	const char loadStat[] = "SELECT * FROM Employees";
+	employeeMap.clear();
+	employeeRegistry.clear();
+	employeesToDelete.clear();
+	sqlite3_open_v2("Database.cdb",&db,0,NULL);
+	sqlite3_prepare_v2(db,loadStat,sizeof(loadStat),&stat,NULL);
+	while(sqlite3_step(stat)==SQLITE_ROW){
+		unsigned char salt[32];
+		unsigned char hash[32];
+		string id = (const char*) sqlite3_column_text(stat,0);
+		string name = (const char*) sqlite3_column_text(stat,1);
+		double salary = sqlite3_column_double(stat,2);
+		string b64salt = (const char*) sqlite3_column_text(stat,3);
+		string b64hash = (const char*) sqlite3_column_text(stat,4);
+		uint64_t permissions = sqlite3_column_int64(stat,5);
+		decodeBase64(salt,b64salt);
+		decodeBase64(hash,b64hash);
+		Employee e(name,UUID(id),salary,salt,hash,EnumSet<Permission>(permissions));
+		addEmployee(e);
+	}
+	sqlite3_finalize(stat);
+	sqlite3_close_v2(db);
 }
 void Employees::save()const{
- //TODO 
+	const char setStat[] = "UPDATE Employees SET EmployeeName=?1, Salary=?2, Salt=?3, Hash=?4, Permissions=?5 WHERE EmployeeId=?6";
+	const char deleteStat[] = "DELETE FROM Employees WHERE EmployeeId=?1";
+	sqlite3* db;
+	sqlite3_stmt* stat;
+	sqlite3_open_v2("Database.cdb",&db,0,NULL);
+	sqlite3_prepare_v2(db,deleteStat,sizeof(deleteStat),&stat,NULL);
+	for(const UUID& u:employeesToDelete){
+		sqlite3_bind_text(stat,1,u.toString().c_str(),u.toString().length(),NULL);
+		sqlite3_step(stat);
+		sqlite3_reset(stat);
+	}
+	sqlite3_finalize(stat);
+	sqlite3_prepare_v2(db,setStat,sizeof(setStat),&stat,NULL);
+	for(const Employee& e:employeeRegistry){
+		if(!e.isDirty())
+			continue;
+		const UUID& u = e.getUUID();
+		sqlite3_bind_text(stat,1,e.getName().c_str(),e.getName().length(),NULL);
+		sqlite3_bind_double(stat,2,e.getPay());
+		unsigned char salt[32];
+		unsigned char hash[32];
+		string b64salt;
+		string b64hash;
+		e.getSalt(salt);
+		e.getHash(hash);
+		b64salt = encodeBase64(salt,32);
+		b64hash = encodeBase64(hash,32);
+		sqlite3_bind_text(stat,3,b64salt.c_str(),b64salt.length(),NULL);
+		sqlite3_bind_text(stat,4,b64hash.c_str(),b64hash.length(),NULL);
+		sqlite3_bind_int64(stat,5,e.getPermissions().toMap());
+		sqlite3_bind_text(stat,6,u.toString().c_str(),u.toString().length(),NULL);
+		sqlite3_step(stat);
+		sqlite3_reset(stat);
+	}
+	sqlite3_finalize(stat);
 }
 
 void Employees::removeEmployee(const UUID& u){
- //TODO 
+	const Employee& e = *employeeMap[u];
+	employeeMap.erase(u);
+	employeesToDelete.push_back(u);
+	for(int i = 0;i<employeeRegistry.size();i++){
+		if(employeeRegistry[i]==e){
+			iterator itr = employeeRegistry.begin();
+			itr+=i;
+			employeeRegistry.erase(itr);
+			break;
+		}
+	}
 }
 
 const UUID& Employees::addEmployee(const string& name,double salary,const string& pwd){
@@ -299,12 +370,13 @@ const UUID& Employees::addEmployee(const string& name,double salary,const string
 }
 
 void Employees::addEmployee(const Employee& e){
- employeeRegistry.push_back(e);
- 
+	employeeRegistry.push_back(e);
+	Employee& target = employeeRegistry.back();
+	employeeMap[target.getUUID()] = &target;
 }
 
 Employee& Employees::getEmployee(const UUID& u){
- return employeeMap[u]; 
+ return *employeeMap[u]; 
 }
 
 Employees::iterator Employees::begin(){
@@ -337,6 +409,6 @@ int Employees::hashCode()const{
 }
 
 void Employees::sort(){
- //TODO 
+	
 }
 
