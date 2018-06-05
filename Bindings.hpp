@@ -298,18 +298,49 @@ public:
     */
 	const_reference getEmployee(const UUID&)const;
     /*
-        Obtains an iterator pointing to the first element of this list.
+        Obtains an iterator to the first element of this list.
         The iterator is guarenteed to satisfy RandomAccessIterator and BiDirectionalIterator.
-        The iterator is invalidated if employees are reloaded or an employee is removed (after the position).
+        The iterator is invalidated if employees are reloaded or an employee is removed (after the position)
     */
 	iterator begin();
+    /*
+        Obtains an constant iterator to the first element of this list.
+        The iterator is guarenteed to satisfy RandomAccessIterator and BiDirectionalIterator.
+        The iterator is invalidated if employees are reloaded or an employee is removed (after the position)
+    */
 	const_iterator begin()const;
+    /*
+        Obtains an iterator pointing to the end of this list.
+        The iterator is guarenteed to satisfy RandomAccessIterator and BiDirectionalIterator.
+        The iterator is invalidated if employees are reloaded or an employee is removed
+    */
 	iterator end();
+    /*
+        Obtains an constant iterator pointing to the end of this list.
+        The iterator is guarenteed to satisfy RandomAccessIterator and BiDirectionalIterator.
+        The iterator is invalidated if employees are reloaded or an employee is removed
+    */
 	const_iterator end()const;
+    /*
+        Obtains the length of the Employee List
+    */
 	int length()const;
 	int hashCode()const;
+    /*
+        Sorts this employee list.
+        This function will sort the underlying list and will invalidate all iterators and references obtained prior.
+        This function should only be used if absolutely necessary.
+    */
 	void sort();
+    /*
+        Obtains a reference to an employee given by its UUID.
+        This method is an alias of the equivalent getEmployee
+    */
 	reference operator[](const UUID&);
+    /*
+        Obtains a reference to an employee given by its UUID.
+        This method is an alias of the equivalent getEmployee
+    */
 	const_reference operator[](const UUID&)const;
 };
 
