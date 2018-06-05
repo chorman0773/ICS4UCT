@@ -39,6 +39,9 @@ enum class AuthenticationResult{
     The class contains the Employee's Name, unique Identifier, pay,
     SHA-256 hashed authentication Credentials, permission list, and status.
     Employees extend the Abstract Hashable class to implement the hashcode feature.
+    
+    The Employee class satisfies StringConvertible (it can be implicit converted to a string),
+    satisfies DefaultConstructible, CopyConstructible, MoveConstructible, CopyAssignable, and MoveAssignable
 */
 class Employee : public Hashable{
 	string name;
@@ -91,19 +94,90 @@ public:
         This method is mutating and will mark the employee as "dirty".
     */
 	void addPermission(Permission);
+	/*
+	    Removes a given permission from the employee's Permission list.
+        After this call, it is guarenteed that a call to hasPermission() for that permisison will return false,
+        unless the underlying permission set is changed, or a subsequent call to addPermission is made.
+        This method is mutating and will mark the employee as "dirty".
+	*/
 	void removePermission(Permission);
+    /*
+        Copys the salt array into the passed byte array.
+        This method will mutate the incoming array.
+    */
 	void getSalt(unsigned char(&)[32])const;
+    /*
+        Copys the hash array into the passed byte array.
+        This method will mutate the incoming array.
+    */
 	void getHash(unsigned char(&)[32])const;
+    /*
+        Attempts to authenticate the Employee with a given password.
+        If the password is invalid, this method will return AuthenticationResult::FAILED_BAD_PASSWORD.
+        Otherwise, if the user does not have the Permission "AUTH", this method will return AuthenticationResult::FAILED_CANT_AUTHENTICATE
+        Otherwise, the method authenticates and updates the status to ONLINE.
+        If the user has the "ADMINISTRATOR" permission then the method will return AuthenticationResult::SUCCESS_ADMIN,
+        otherwise the method returns AuthenticationResult::SUCCESS.
+    */
 	AuthenticationResult authenticate(const string&);
+    /*
+        Updates the status of the employee.
+    */
 	void setStatus(Status);
+    /*
+        Obtains the UUID of this employee as a const reference.
+    */
 	const UUID& getUUID()const;
+    /*
+        Obtains the current status.
+    */
 	Status getStatus()const;
+    /*
+        Obtains the pay of this employee.
+    */
 	double getPay()const;
+    /*
+        Sets the value of the pay field.
+        This method will mark this employee as "dirty".
+    */
 	void setPay(double);
+    /*
+        Obtains the set of Permissions active on the employee.
+        This set provides a read-only view of the permission's set.
+    */
 	const EnumSet<Permission>& getPermissions()const;
+    /*
+        Attempts to update the password of this user.
+        The first (original password) is used to reauthenticate to elevate the session.
+        If the original password is not valid, then the result is AuthenticationResult::FAIL_BAD_PASSWORD.
+        If the original password is valid, but the new password is less than 8 characters,
+        then the result is AuthenticationResult::NEW_PASSWORD_NOT_VALID.
+        Otherwise, the Authentication Credentials are regenerated for the new password, 
+        and the result is AuthenticationResult::PASSWORD_CHANGED.
+        If the password is changed then the method mutates the employee and marks it as "dirty".
+    */
 	AuthenticationResult changePassword(const string&,const string&);
+    /*
+        Marks this employee as dirty, ie. Changed.
+        If the Employee Storage System is partial-mutation based (only update the changed portions),
+        then marking it as dirty will cause the system to save this employee to the peristant storage system.
+        If the Employee Storage System saves all employees during a save routine, then marking an employee as dirty
+        has no effect.
+    */
 	void markDirty();
+    /*
+        Marks this employee as clean, ie. unchanged.
+        If the Employee Storage System is partial-mutation based (only update the change portions),
+        then marking it as clean will prevent the system from saving this employee to the persistant storage system.
+        If the Employee Storage System saves all employees during a save routine, then marking an employee as clean
+        has no effect.
+    */
 	void markClean();
+    /*
+        Checks if the employee is dirty.
+        Methods that mutate persistant variables of the employee will implicit set the dirty field.
+        isDirty() will return false if 
+    */
 	bool isDirty()const;
 	void setPassword(const string&);
 	bool operator==(const Employee&)const;
