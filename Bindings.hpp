@@ -19,13 +19,8 @@ enum class Permission{
 };
 
 enum class Status{
-	OFFLINE, AWAY, ONLINE
+	OFFLINE = 0, AWAY = 1, ONLINE = 2
 };
-
-bool operator< (Status,Status);
-bool operator> (Status,Status);
-bool operator<=(Status,Status);
-bool operator>=(Status,Status);
 
 enum class AuthenticationResult{
 	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
@@ -70,23 +65,33 @@ public:
 	bool operator>=(const Employee&)const;
 	bool operator< (const Employee&)const;
 	bool operator> (const Employee&)const;
+	operator const string&()const; 
+	/*
+		Employee e;
+		string str = e;
+	*/
 };
 
 class Employees:public Hashable{
-	map<UUID,Employee> employeeMap;
+	map<UUID,Employee*> employeeMap;
 	vector<Employee> employeeRegistry;
+	vector<UUID> employeesToDelete;
+	vector<UUID> employeesToAdd;
 public:
 	typedef vector<Employee>::iterator iterator;
 	typedef vector<Employee>::const_iterator const_iterator;
-	typedef Employee type;
+	typedef Employee value_type;
+	typedef Employee& reference;
+	typedef const Employee& const_reference;
 	Employees();
 	void load();
-	void save()const;
+	void save();
 	void removeEmployee(const UUID&);
 	const UUID& addEmployee(const string&,double,const string&);
 	void addEmployee(const Employee&);
-	Employee& getEmployee(const UUID&);
-	const Employee& getEmployee(const UUID&)const;
+	const_reference getEmployee(int i)const;
+	reference getEmployee(const UUID&);
+	const_reference getEmployee(const UUID&)const;
 	iterator begin();
 	const_iterator begin()const;
 	iterator end();
@@ -94,6 +99,8 @@ public:
 	int length()const;
 	int hashCode()const;
 	void sort();
+	reference operator[](const UUID&);
+	const_reference operator[](const UUID&)const;
 };
 
 enum class Units: unsigned char{

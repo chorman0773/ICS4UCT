@@ -8,6 +8,8 @@
 #include "Random.hpp"
 #include "JTime.hpp"
 
+#include <SHA256.hpp>
+
 extern const int32_t hashPrime;
 
 
@@ -23,6 +25,8 @@ using std::istream;
 
 const string sep("-");
 const int sizes[] = {8,4,4,4,12};
+
+const UUID UUID::NIL = "00000000-0000-0000-0000-000000000000";
 
 int32_t UUID::hashCode()const{
 	return hashcode(this->high)*hashPrime+hashcode(this->low);
@@ -107,6 +111,19 @@ UUID UUID::ofNow(){
 	return UUID(high,low);
 }
 
+UUID UUID::randomUUID(){
+	char bytes[32];
+	uint64_t (&longs)[2] = reinterpret_cast<uint64_t(&)[2]>(bytes);
+	int (&ints)[4] = reinterpret_cast<int(&)[4]>(bytes);
+	for(int& i:ints)
+		i = uuidRandom.nextInt();
+	SHA256(bytes,32,bytes);
+	for(int i = 0;i<16;i++){
+		bytes[i] = bytes[2*i]^bytes[2*i+1];
+	}
+	return UUID(longs[0],longs[1]);
+}
+
 bool UUID::operator==(const UUID& u)const{
 	return high==u.high&&low==u.low;
 }
@@ -115,3 +132,32 @@ bool UUID::operator!=(const UUID& u)const{
 	return high!=u.high||low!=u.low;
 }
 
+bool UUID::operator< (const UUID& u)const{
+	return high<u.high||high==u.high&&low<u.low;
+}
+bool UUID::operator> (const UUID& u)const{
+	return high>u.high||high==u.high&&low>u.low;
+}
+bool UUID::operator<=(const UUID& u)const{
+	return high<u.high||high==u.high&&low<=u.low;
+}
+bool UUID::operator>=(const UUID& u)const{
+	return high>u.high||high==u.high&&low>=u.low;
+}
+
+UUID::operator string()const{
+	return toString();
+}
+
+namespace std{
+	template<> struct hash<UUID>{
+	public:
+		size_t operator()(const UUID& u){
+			return u.hashCode();
+		}
+	};
+};
+
+template<> int hashcode<UUID>(UUID u){
+	return u.hashCode();
+}

@@ -4,16 +4,15 @@
 #include <type_traits>
 #include <cstdint>
 #include <cstdarg>
-#include <initializer_list>
 #include "Hash.hpp"
 
-template<typename E> class EnumSet:public Hashable{
+template<typename E> class EnumSet{
     static_assert(std::is_enum<E>::value,"Enum Set cannot be used except by an enum");
     typedef E value_type;
-    typedef std::underlying_type<E>::type underlying_type;
+    typedef typename std::underlying_type<E>::type underlying_type;
     uint64_t map;
     static uint64_t getBit(value_type v){
-        return 1LL<<(static_cast<const std::underlying_type<E>::type&>(v));
+        return 1LL<<(static_cast<const std::underlying_type<E>::type>(v));
     }
     
     class iterator{
@@ -52,31 +51,19 @@ template<typename E> class EnumSet:public Hashable{
     
 public:
     EnumSet():map(0){}
-    EnumSet(E val1):map(0){
-       add(val1);
-    }
-    EnumSet(E val1,E val2):map(0){
-        add(val1);
-        add(val2);
-    }
-    EnumSet(E val1,E val2,E val3):map(0){
-      add(val1);
-      add(val2);
-      add(val3);
-    }
-    template<size_t N> EnumSet(E(&vals)[N]){
-      for(E v:vals)
-          add(v);
-    }
-    template<size_t N> EnumSet(array<E,N>& vals){
-     for(E v:vals)
-        add(v);
-    }
-    /*EnumSet(const initializer_list<E>& e){
-        for(E v:e)
-            add(v);
-    }*/
     EnumSet(uint64_t map):map(map){}
+	EnumSet(value_type a):map(0){
+		add(a);
+	}
+	EnumSet(value_type a,value_type b):map(0){
+		add(a);
+		add(b);
+	}
+	EnumSet(value_type a,value_type b,value_type c):map(0){
+		add(a);
+		add(b);
+		add(c);
+	}
     bool add(value_type v){
         if(contains(v))
             return false;

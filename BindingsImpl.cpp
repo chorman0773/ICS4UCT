@@ -1,6 +1,7 @@
 #include "Bindings.hpp"
-#include <openssl/rand.h>
-#include <openssl/sha.h>
+#include <SHA256.hpp>
+#include <SecureRandom.hpp>
+
 #include <sqlite3/sqlite3.h>
 #include <UUID.hpp>
 #include <Hash.hpp>
@@ -9,110 +10,14 @@
 
 #include <cstring>
 
+#include <json/json.h>
+
+#include <fstream>
+
 using std::random_device;
 
-int rotate(int val,int by){
-  by &=31;
-  return val>>(by)|val<<(32-by);
-}
+SecureRandom employeeRandom;
 
-bool operator< (Status a,Status b){
-	if(a==b)
-		return false;
-	switch(a){
-	case Status::OFFLINE:
-      return true;
-    break;
-    case Status::AWAY:
-      return b!=Status::OFFLINE;
-    break;
-    case Status::ONLINE:
-      return false;
-    break;
-  }
-}
-
-bool operator> (Status a,Status b){
- if(a==b)
-   return false;
-  switch(a){
-    case Status::OFFLINE:
-      return false;
-    break;
-    case Status::AWAY:
-      return b==Status::OFFLINE;
-    break;
-    case Status::ONLINE:
-      return true;
-    break;
-  }
-}
-bool operator>=(Status a,Status b){
- return a==b||a>b; 
-}
-
-bool operator<=(Status a,Status b){
- return a==b||a<b; 
-}
-
-   int h[8] = {0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5};
-
-/*
-  Seed the Random Number Generator that OpenSSL Uses.
-  This function is called when there is not enough entropy in the OpenSSL CSPRNG.
-  This function preform a SHA-2 like hash expansion and compression with 16 random words from the
-  system random device, to an array of 64 words, which is then used to seed the OpenSSL CSPRNG.
-  This procedure will repeat until OpenSSL reports that there is enough entropy in its pool.
-*/
-void seedSystemRandom(){
-  int words[64] = {0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19,
-          0xc1059ed8,0x367cd507,0x3070dd17,0xf70e5939,0xffc00b31,0x68581511,0x64f98fa7,0xbefa4fa4,
-          0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-           0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-           0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-           0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-           0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-           0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
-   random_device dev;
-  do{
-    int a = h[0];
-    int b = h[1];
-    int c = h[2];
-    int d = h[3];
-    int e = h[4];
-    int f = h[5];
-    int g = h[6];
-    int j = h[7];
-
-    
-    for(int i = 0;i<16;i++)
-      words[i] ^= dev();
-    for(int i = 16;i<64;i++){
-      int val1 = rotate(words[i-15],5)^rotate(words[i-16],7)^rotate(words[i-15],17)^0xB7E15162;
-      int val2 = rotate(words[i-7],13)^rotate(words[i-8],19)^rotate(words[i-7],11)^0x243F6A88;
-      int tmp1 = (rotate(e,7)^rotate(f,11)^rotate(g,13)^j)+val1;
-      int tmp2 = (rotate(a,23)^rotate(b,7)^rotate(c,29)^d)+val2;
-      j = g;
-      g = f;
-      f = e;
-      e = d+tmp1;
-      d = c;
-      c = b;
-      b = a;
-      a = tmp1+tmp2;
-      words[i] += val1+val2+words[i-16]+0x9E3779B9;
-    }
-    h[0] += a;
-    h[1] += b;
-    h[2] += c;
-    h[3] += d;
-    h[4] += e;
-    h[5] += f;
-    h[6] += g;
-    h[7] += j;
-    RAND_seed(&words,sizeof(words));
-  }while(RAND_status()==0);
-}
 
 unsigned char* saltPwd(const unsigned char* pwd,unsigned int size,const unsigned char (&salt)[32]){
   int outSize = size+32-(size%32);
@@ -132,14 +37,12 @@ Employee::Employee(const string& name,const UUID& id,double salary,const unsigne
 Employee Employee::newEmployee(const string& name,double salary,const string& pwd){
 	unsigned char salt[32];
 	unsigned char hash[32];
-	const unsigned char* saltedPwd;
+	char* saltedPwd;
 	UUID id = UUID::ofNow();
 	int outSize = name.length()+32-(name.length()%32);
-	if(RAND_status()==0)
-		seedSystemRandom();
-	RAND_bytes(salt,32);
-	saltedPwd = saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
-	SHA256(saltedPwd,outSize,hash);
+	employeeRandom.nextBytes(salt,32);
+	saltedPwd =(char*) saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
+	SHA256(saltedPwd,outSize,(char(&)[32])hash);
 	delete[] saltedPwd; 
 	return Employee(name,id,salary,salt,hash,EnumSet<Permission>(Permission::AUTH));
 }
@@ -152,8 +55,6 @@ int32_t Employee::hashCode()const{
   hash += hashcode(id);
   hash *= prime;
   hash += hashcode(salary);
-  hash *= prime;
-  hash += hashcode(s);
   return hash;
 }
 
@@ -185,10 +86,11 @@ void Employee::getHash(unsigned char(&out)[32])const{
 
 AuthenticationResult Employee::authenticate(const string& s){
   int outSize = name.length()+32-(name.length()%32);
-  unsigned char buffer[32];
+  char buffer[32];
   
-  const unsigned char* saltedPwd = saltPwd((const unsigned char*) s.c_str(),s.length(),salt);
+  char* saltedPwd =(char*) saltPwd((const unsigned char*) s.c_str(),s.length(),salt);
   SHA256(saltedPwd,outSize,buffer);
+  delete[] saltedPwd;
   if(memcmp(hash,buffer,32)!=0)
     return AuthenticationResult::FAIL_BAD_PASSWORD;
   else if(!permissions.contains(Permission::AUTH))
@@ -201,16 +103,13 @@ AuthenticationResult Employee::authenticate(const string& s){
 
 void Employee::setPassword(const string& pwd){
   unsigned char salt[32];
-  unsigned char hash[32];
-  unsigned char* saltedPwd;
+  char hash[32];
+  char* saltedPwd;
   UUID id = UUID::ofNow();
   int outSize = name.length()+32-(name.length()%32);
-  if(RAND_status()==0)
-    seedSystemRandom();
-  RAND_bytes(salt,32);
-  saltedPwd = saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
+  employeeRandom.nextBytes(salt,32);
+  saltedPwd =(char*) saltPwd((const unsigned char*)pwd.c_str(),pwd.length(),salt);
   SHA256(saltedPwd,outSize,hash);
-  delete[] saltedPwd; 
   memcpy(this->salt,salt,32);
   memcpy(this->hash,hash,32);
   markDirty();
@@ -281,78 +180,90 @@ bool Employee::isDirty()const{
  return dirty; 
 }
 
+Employee::operator const std::string&()const{
+	return name;
+}
+
 Employees::Employees(){}
 
 
+char hexmap[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+
+unsigned char fromHexByte(const char* str){
+	unsigned char out = 0;
+	const char& high = str[0];
+	const char& low = str[1];
+	if(high>='0'&&high<='9')
+		out |= high-'0';
+	else if(high>='A'&&high<='F')
+		out |= (high-'A')+10;
+	out <<= 4;
+	if(low>='0'&&low<='9')
+		out |= low-'0';
+	else if(low>='A'&&low<='F')
+		out |= (low-'A')+10;
+	return out;
+}
 
 void Employees::load(){
-	sqlite3* db;
-	sqlite3_stmt* stat;
-	const char loadStat[] = "SELECT * FROM Employees";
-	employeeMap.clear();
-	employeeRegistry.clear();
-	employeesToDelete.clear();
-	sqlite3_open_v2("Database.cdb",&db,0,NULL);
-	sqlite3_prepare_v2(db,loadStat,sizeof(loadStat),&stat,NULL);
-	while(sqlite3_step(stat)==SQLITE_ROW){
+	Json::Value employees;
+	std::ifstream employeeFile("employees.json");
+	employeeFile >> employees;
+	employeeFile.close();
+	Json::Value list = employees["list"];
+	for(const Json::Value& state:list){
 		unsigned char salt[32];
 		unsigned char hash[32];
-		string id = (const char*) sqlite3_column_text(stat,0);
-		string name = (const char*) sqlite3_column_text(stat,1);
-		double salary = sqlite3_column_double(stat,2);
-		string b64salt = (const char*) sqlite3_column_text(stat,3);
-		string b64hash = (const char*) sqlite3_column_text(stat,4);
-		uint64_t permissions = sqlite3_column_int64(stat,5);
-		decodeBase64(salt,b64salt);
-		decodeBase64(hash,b64hash);
-		Employee e(name,UUID(id),salary,salt,hash,EnumSet<Permission>(permissions));
+		string xsalt = state["salt"].asString();
+		for(int i = 0;i<32;i++)
+			salt[i] = fromHexByte(&xsalt[2*i]);
+		string xhash = state["hash"].asString();
+		for(int i = 0;i<32;i++)
+			hash[i] = fromHexByte(&xhash[2*i]);
+		UUID id = state["uuid"].asString();
+		string name = state["name"].asString();
+		double pay = state["pay"].asDouble();
+		EnumSet<Permission> permissions(state["permissions"].asLargestUInt());
+		Employee e(name,id,pay,salt,hash,permissions);
 		addEmployee(e);
 	}
-	sqlite3_finalize(stat);
-	sqlite3_close_v2(db);
 }
-void Employees::save()const{
-	const char setStat[] = "UPDATE Employees SET EmployeeName=?1, Salary=?2, Salt=?3, Hash=?4, Permissions=?5 WHERE EmployeeId=?6";
-	const char deleteStat[] = "DELETE FROM Employees WHERE EmployeeId=?1";
-	sqlite3* db;
-	sqlite3_stmt* stat;
-	sqlite3_open_v2("Database.cdb",&db,0,NULL);
-	sqlite3_prepare_v2(db,deleteStat,sizeof(deleteStat),&stat,NULL);
-	for(const UUID& u:employeesToDelete){
-		sqlite3_bind_text(stat,1,u.toString().c_str(),u.toString().length(),NULL);
-		sqlite3_step(stat);
-		sqlite3_reset(stat);
-	}
-	sqlite3_finalize(stat);
-	sqlite3_prepare_v2(db,setStat,sizeof(setStat),&stat,NULL);
-	for(const Employee& e:employeeRegistry){
-		if(!e.isDirty())
-			continue;
-		const UUID& u = e.getUUID();
-		sqlite3_bind_text(stat,1,e.getName().c_str(),e.getName().length(),NULL);
-		sqlite3_bind_double(stat,2,e.getPay());
+void Employees::save(){
+	Json::Value employees(Json::objectValue);
+	Json::Value employeeList(Json::arrayValue);
+	for(const Employee& e:this->employeeRegistry){
+		Json::Value state(Json::objectValue);
+		state["uuid"]=e.getUUID().toString();
 		unsigned char salt[32];
 		unsigned char hash[32];
-		string b64salt;
-		string b64hash;
 		e.getSalt(salt);
 		e.getHash(hash);
-		b64salt = encodeBase64(salt,32);
-		b64hash = encodeBase64(hash,32);
-		sqlite3_bind_text(stat,3,b64salt.c_str(),b64salt.length(),NULL);
-		sqlite3_bind_text(stat,4,b64hash.c_str(),b64hash.length(),NULL);
-		sqlite3_bind_int64(stat,5,e.getPermissions().toMap());
-		sqlite3_bind_text(stat,6,u.toString().c_str(),u.toString().length(),NULL);
-		sqlite3_step(stat);
-		sqlite3_reset(stat);
+		string xsalt;
+		for(unsigned char c:salt){
+			xsalt += hexmap[c>>4];
+			xsalt += hexmap[c&0xf];
+		}
+		string xhash;
+		for(unsigned char c:hash){
+			xhash += hexmap[c>>4];
+			xhash += hexmap[c&0xf];
+		}
+		state["salt"] = xsalt;
+		state["hash"] = xhash;
+		state["name"] = e.getName();
+		state["pay"] = e.getPay();
+		state["permissions"] = e.getPermissions().toMap();
+		employeeList.append(state);
 	}
-	sqlite3_finalize(stat);
+	employees["list"] = employeeList;
+	std::ofstream employeeFile("employees.json");
+	employeeFile << employees;
+	employeeFile.close();
 }
 
 void Employees::removeEmployee(const UUID& u){
 	const Employee& e = *employeeMap[u];
 	employeeMap.erase(u);
-	employeesToDelete.push_back(u);
 	for(int i = 0;i<employeeRegistry.size();i++){
 		if(employeeRegistry[i]==e){
 			iterator itr = employeeRegistry.begin();
@@ -375,8 +286,20 @@ void Employees::addEmployee(const Employee& e){
 	employeeMap[target.getUUID()] = &target;
 }
 
-Employee& Employees::getEmployee(const UUID& u){
- return *employeeMap[u]; 
+Employees::reference Employees::getEmployee(const UUID& u){
+ return *employeeMap.at(u); 
+}
+
+Employees::const_reference Employees::getEmployee(const UUID& u)const{
+	return *employeeMap.at(u);
+}
+
+Employees::reference Employees::operator[](const UUID& u){
+	return *employeeMap.at(u);
+}
+
+Employees::const_reference Employees::operator[](const UUID& u)const{
+	return *employeeMap.at(u);
 }
 
 Employees::iterator Employees::begin(){
@@ -406,6 +329,11 @@ int Employees::hashCode()const{
    hash *= prime;
    hash += e.hashCode();
   }
+  return hash;
+}
+
+Employees::const_reference Employees::getEmployee(int i)const{
+	return *(begin()+i);
 }
 
 void Employees::sort(){
