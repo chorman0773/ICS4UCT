@@ -13,6 +13,10 @@ using std::map;
 using std::vector;
 using std::set;
 
+/*
+    Enumeration describing a Permission. Currently only 2 permissions are used: AUTH -> Which enables and disables accounts,
+    and Administrator which enables Elevation.
+*/
 enum class Permission{
 	AUTH, ADD_EMPLOYEE, MODIFY_EMPLOYEES, UPDATE_INFO, DELETE_EMPLOYEES,
 	ADMINISTRATOR
@@ -22,6 +26,9 @@ enum class Status{
 	OFFLINE = 0, AWAY = 1, ONLINE = 2
 };
 
+/*
+    Enum describing results of Authentication. This is returned by Employee.authenticate Employee.
+*/
 enum class AuthenticationResult{
 	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
 	PASSWORD_CHANGED, NEW_PASSWORD_NOT_VALID
