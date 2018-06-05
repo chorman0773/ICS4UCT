@@ -243,9 +243,27 @@ public:
         Default constructor for employees.
     */
 	Employees();
+    /*
+        Loads the employee list from the persistant storage.
+        This method will invalidate all iterators, and References obtained from the Employees object.
+    */
 	void load();
+    /*
+        Saves the employee list to persistant storage.
+        This method will not modify the state of the list
+    */
 	void save();
-	void removeEmployee(const UUID&);
+	/*
+        Removes an employee from the list given its UUID.
+        If the Employee with that given UUID exists then the employee is removed from the list.
+        All References and Iterators to elements after the removed element are invalidated.
+        If no employee with the given UUID exists, then the method has no effect.
+    */
+    void removeEmployee(const UUID&);
+    /*
+        Adds a new employee to this list.
+        This 
+    */
 	const UUID& addEmployee(const string&,double,const string&);
 	void addEmployee(const Employee&);
 	const_reference getEmployee(int i)const;
