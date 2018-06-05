@@ -1,0 +1,13 @@
+{
+	"list" : 
+	[
+		{
+			"hash" : "FC3227F1CD0B29F7F858C082A803AA092B8E879F13B2539181E1377A5B178CFE",
+			"name" : "sysadmin",
+			"pay" : 0.0,
+			"permissions" : 33,
+			"salt" : "50FA132C629824601EF31A0CFD2CFDA03E605F063D6925AFB2EF933177628C6C",
+			"uuid" : "6f8072eb-b5af-1e16-0600-800064080000"
+		}
+	]
+}
