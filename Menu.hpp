@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <type_traits>
+#include "TypingManagement.hpp"
 
 
 
@@ -43,12 +45,38 @@ private:
 
 public:
 	void init();
-	Menu(string name, string options[], int num, bool wrapping);
-	Menu(string name, string options[], int num);
+	Menu(string name, string options[], size_t num, bool wrapping);
+	Menu(string name, string options[], size_t num);
+	template<size_t N> Menu(string name,string (&options)[N],bool wrapping=true):name(name),wraps(wrapping),lock(false){
+		loadOptions(options,N);
+	}
 	Menu(string name);
 	Menu(string name, bool wrapping);
+	
+
+	template<typename T,size_t N> Menu(string name,T(&arr)[N],bool wrapping=true,typename std::enable_if<std::is_convertible<T,string>::value,bool>::type=true):
+			name(name),wraps(wrapping),lock(false){
+		vector<string> options;
+		for(const T& t:arr)
+			options.push_back(string(t));
+		loadOptions(options);
+	}
+
+	template<typename Iterable> Menu(string name,const Iterable& itr,bool wraps=true,
+			typename std::enable_if<std::is_convertible<typename Iterable::value_type,string>::value,bool>::type=true,
+			typename std::conditional<false,typename std::conditional<false,decltype(std::declval<Iterable>().begin()),
+		decltype(std::declval<Iterable>().end())>::type,bool>::type=false):name(name),wraps(wraps),lock(false)
+	{
+		typedef typename Iterable::value_type type;
+		vector<string> options = vector<string>();
+		for(const type& t:itr)
+			options.push_back(string(t));
+		loadOptions(options);
+	}
+			
 	Menu();
 
+	
 	void loadOptions(string options[],int num);
 	void loadOptions(vector<string> options);
 	

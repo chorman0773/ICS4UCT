@@ -38,7 +38,7 @@ Menu::Menu(string name){
 	this->num = 0;
 	this->optCount = 0;
 }
-Menu::Menu(string name,string options[],int num){
+Menu::Menu(string name,string options[],size_t num){
 	this->lock = false;
 	this->name = name;
 	this->loadOptions(options,num);
@@ -47,7 +47,7 @@ Menu::Menu(string name,string options[],int num){
 	this->init();
 	this->optCount = 0;
 }
-Menu::Menu(string name,string options[],int num,bool wrapping){
+Menu::Menu(string name,string options[],size_t num,bool wrapping):lock(false){
 	this->name = name;
 	this->loadOptions(options,num);
 	this->num = num;
