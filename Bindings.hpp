@@ -262,13 +262,46 @@ public:
     void removeEmployee(const UUID&);
     /*
         Adds a new employee to this list.
-        This 
+        This method effectively combines Constructing an employee with Employee::newEmployee,
+        calling addEmployee with the constructed Employee,
+        and returning a reference to the new employee's UUID.
+        This method does not invalidate iterators or references.
     */
 	const UUID& addEmployee(const string&,double,const string&);
+    /*
+        Adds an employee to the list.
+        This method does not invalidate iterators or references.
+    */
 	void addEmployee(const Employee&);
+    /*
+        Obtains a reference to the nth employee.
+        This method only returns constant references.
+        Note: By default the list of employees in unordered. Obtaining a reference using this method 
+        may not produce consistant results.
+        If employees are reloaded or removed from the list then this reference is invalidated.
+        If there is no employee with the given index, this method will throw an exception.
+    */
 	const_reference getEmployee(int i)const;
+    /*
+        Obtains a non-constant reference to an employee based on its UUID.
+        Unless the employee is removed, obtaining multiple references with the same UUID from this method will produce the same
+        Employee Reference.
+        If employees are reloaded or removed, then this reference is invalidated.
+        If there is no employee with the given UUID, this method will throw an exception.
+    */
 	reference getEmployee(const UUID&);
+    /*
+        Obtains a constant reference to an employee based on its UUID.
+        This method provides the same consistancy gaurentee as the non-const qualified version.
+        If employees are reloaded or removed, then this reference is invalidated.
+        If there is no employee with the given UUID, this method will throw an exception.
+    */
 	const_reference getEmployee(const UUID&)const;
+    /*
+        Obtains an iterator pointing to the first element of this list.
+        The iterator is guarenteed to satisfy RandomAccessIterator and BiDirectionalIterator.
+        The iterator is invalidated if employees are reloaded or an employee is removed (after the position).
+    */
 	iterator begin();
 	const_iterator begin()const;
 	iterator end();
