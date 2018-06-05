@@ -9,11 +9,12 @@ using std::string;
 using std::ostream;
 using std::istream;
 
-class UUID : public Hashable{
+class UUID{
 private:
 	uint64_t high;
 	uint64_t low;
 public:
+	static const UUID NIL;
 	static UUID fromString(string);
 	static UUID randomUUID();
 	static UUID uuidFromNamespace(string);
@@ -25,8 +26,13 @@ public:
 	uint64_t getLow()const;
 	int32_t hashCode()const;
 	string toString()const;
+	operator string()const;
 	bool operator==(const UUID&)const;
 	bool operator!=(const UUID&)const;
+	bool operator< (const UUID&)const;
+	bool operator> (const UUID&)const;
+	bool operator<=(const UUID&)const;
+	bool operator>=(const UUID&)const;
 };
 
 ostream& operator<<(ostream&,const UUID&);
