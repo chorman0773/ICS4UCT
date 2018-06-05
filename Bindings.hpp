@@ -176,34 +176,72 @@ public:
     /*
         Checks if the employee is dirty.
         Methods that mutate persistant variables of the employee will implicit set the dirty field.
-        isDirty() will return false if 
+        isDirty() will return false if since Constructing the instance or the last call to markClean(),
+        if markDirty() or any methods which mark the employee as "dirty" have not been called and true otherwise.
     */
 	bool isDirty()const;
+    /*
+        Updates the Authentication Credentials of the account to set the password associated with the account
+        to the provided new password.
+    */
 	void setPassword(const string&);
+    /*
+        Compares this employee to another for equality.
+        2 Employees are equal if they have the same UUID.
+    */
 	bool operator==(const Employee&)const;
+    /*
+        Compares this employee to another for inequality.
+        2 Employees are not equal if they have a different UUID.
+    */
 	bool operator!=(const Employee&)const;
+    /*
+        Compares this employee to another, ordering by equality and sequence
+        (Less-than-equals)
+    */
 	bool operator<=(const Employee&)const;
+    /*
+        Compares this employee to another, ordering by equality and sequence
+        (Greater-than-equals)
+    */
 	bool operator>=(const Employee&)const;
+    /*
+        Compares this employee to another ordering by sequence.
+        Employees are ordered by Status, then by name.
+        (Less-than)
+    */
 	bool operator< (const Employee&)const;
+    /*
+        Compares this employee to another ordering by sequence.
+        Employees are ordered by Status, then by name.
+        (Greater-than)
+    */
 	bool operator> (const Employee&)const;
+    /*
+        Implicitly converts this employee to a string.
+        This conversion operator is a convience for getName(), and exists to Satisfy StringConvertible.
+    */
 	operator const string&()const; 
-	/*
-		Employee e;
-		string str = e;
-	*/
 };
 
+/*
+   The Employees class contains a list of employees for tracking and persistance.
+   The class wraps a list of Employee objects.
+   The Employees class extends hashable, and the hashcode is computed from the hashcode of each controlled employee instance.
+   Employees Satisfies Collection, Random-Access Iterable, and List of StringConvertible Types.
+*/
 class Employees:public Hashable{
 	map<UUID,Employee*> employeeMap;
 	vector<Employee> employeeRegistry;
-	vector<UUID> employeesToDelete;
-	vector<UUID> employeesToAdd;
 public:
 	typedef vector<Employee>::iterator iterator;
 	typedef vector<Employee>::const_iterator const_iterator;
 	typedef Employee value_type;
 	typedef Employee& reference;
 	typedef const Employee& const_reference;
+    /*
+        Default constructor for employees.
+    */
 	Employees();
 	void load();
 	void save();
