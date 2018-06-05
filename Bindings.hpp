@@ -27,13 +27,19 @@ enum class Status{
 };
 
 /*
-    Enum describing results of Authentication. This is returned by Employee.authenticate Employee.
+    Enum describing results of Authentication.
 */
 enum class AuthenticationResult{
 	FAIL_BAD_PASSWORD, FAIL_CANT_AUTHENTICATE, SUCCESS, SUCCESS_ADMIN,
 	PASSWORD_CHANGED, NEW_PASSWORD_NOT_VALID
 };
 
+/*
+    Class which describes an employee in the company.
+    The class contains the Employee's Name, unique Identifier, pay,
+    SHA-256 hashed authentication Credentials, permission list, and status.
+    Employees extend the Abstract Hashable class to implement the hashcode feature.
+*/
 class Employee : public Hashable{
 	string name;
 	UUID id;
@@ -44,12 +50,46 @@ class Employee : public Hashable{
 	Status s;
 	bool dirty;
 public:
+    /*
+        Default Constructor for Employee class.
+        This constructor will initialize the id to NIL and name to an empty string.
+    */
 	Employee();
+    /*
+        Initialization Constructor for the Employee Class.
+        this class initializes all non-transient fields of the Employee class to the provided values and sets the transient fields
+        to their defaults (Status is set to OFFLINE and dirty is set to false).
+        In general this Constructor should not be directly called and should only be called by Employees.load() and
+        newEmployee()
+    */
 	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
+    /*
+        Factory Helper Method to create a new employee with a given name, pay, and password.
+        The new Employee will be assigned a Unique Id which is guarenteed (with Overwealming probability) of being different
+        from any other UUID generated. The UUID follows RFC 4122 for Version 1, Variant 2 Time based UUIDs with a random node:
+        See https://en.wikipedia.org/wiki/Universally_unique_identifier for details about this type of UUID.
+    */
 	static Employee newEmployee(const string&,double,const string&);
+    /*
+        Computes the hashcode of the employee.
+        The hashcode is computed using the name, pay, and UUID of the Employee
+    */
 	int32_t hashCode()const;
+    /*
+        Obtains a constant reference to the name of the employee.
+    */
 	const string& getName()const;
+    /*
+        Checks if the given permission exists on the employee.
+        This call is effectively the same as getPermissions().contains(Permission)
+    */
 	bool hasPermission(Permission)const;
+    /*
+        Adds a given permission to the employee's Permission list.
+        After this call, it is guarenteed that a call to hasPermission() for that permission will return true,
+        unless the underlying permission set is changed, or a subsequent call to removePermission is made.
+        This method is mutating and will mark the employee as "dirty".
+    */
 	void addPermission(Permission);
 	void removePermission(Permission);
 	void getSalt(unsigned char(&)[32])const;
