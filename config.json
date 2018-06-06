@@ -20,5 +20,12 @@
         "make-requistion":false,
         "fill-requistion":true,
         "enter-reciept":true
+    },
+    "hash-validation":{
+        "employees":true,
+        "products":true,
+        "audits":false,
+        "requistions":true,
+        "reciepts":true
     }
 }
