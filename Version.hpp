@@ -25,7 +25,7 @@ template<predefined target> struct VersionConstants{};
 /*
  * Represents a version of the code.
  * This specification only defines the Major and Minor parts of the version and is encoded
- * using ObjectiveLua's Encoding.
+ * using The Sentry Version Encoding.
  * This class also provides utilities for obtaining versions from strings, and from a given
  * major and minor, as well as reading and writing to Data Streams (and text streams).
  * The Version class provides both the read from (istream >>) and the write to (ostream <<) operators
