@@ -6,6 +6,14 @@
 #include <cstdarg>
 #include "Hash.hpp"
 
+/*
+    Represents a Set of Enum Constants.
+    EnumSet satisfies Forward Constant Iterable, Collection, and Set
+    for every Type E which is declared as enum E, enum class E, or enum struct E.
+    If E is not declared as an enum type, then instantiating EnumSet with E makes the program ill formed.
+    Note that the Iterator of EnumSet does not satisfy BiDirectional Iterator, RandomAccess Iterator,
+    or Mutable Iterator.
+*/
 template<typename E> class EnumSet{
     static_assert(std::is_enum<E>::value,"Enum Set cannot be used except by an enum");
     typedef E value_type;
@@ -50,6 +58,10 @@ template<typename E> class EnumSet{
     };
     
 public:
+    /*
+        Default Constructor for EnumSet.
+        No values appear in the Enum Set.
+    */
     EnumSet():map(0){}
     EnumSet(uint64_t map):map(map){}
 	EnumSet(value_type a):map(0){
