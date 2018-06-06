@@ -1,5 +1,11 @@
 {
-    "database-file":"main.cdb",
+    "files":{
+        "employees":"employees.json",
+        "audits":"audits.json",
+        "products":"products.json",
+        "requisitions":"requisitions.json",
+        "reciepts":"reciepts.json"
+    },
     "audit-actions":{
         "authenticate":false,
         "authenticate-admin":true,
