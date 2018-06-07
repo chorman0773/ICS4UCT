@@ -136,8 +136,13 @@ public:
 	}
     
     #ifdef __MENU_CODE_VARARGS_TEMPLATE
-    template<typename... Args,size_t N=sizeof...(Args)> Menu(string name,Args... args,bool wrapping=true
-      typename std::enable_if<std::is_same<string,typename std::common_type<string,Args...>::type>::value,bool>::type=false)
+    template<typename... Args,typename=typename std::common_type<string,Args...>::type> Menu(string name,Args... args)
+            :name(name),wraps(true),lock(false){
+        vector<string> options;
+        (options.push_back(args), ...);
+        loadOptions(options);
+    }
+	template<typename... Args,typename=typename std::common_type<string,Args...>::type> Menu(string name,bool wrapping,Args... args)
             :name(name),wraps(wrapping),lock(false){
         vector<string> options;
         (options.push_back(args), ...);
