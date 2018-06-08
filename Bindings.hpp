@@ -367,6 +367,8 @@ public:
 	double getCost()const;
 	Units getUnits()const;
 	int hashCode()const;
+	void request(double quantity);
+	void fillRequesition();
 	bool operator==(const Product&)const;
 	bool operator<=(const Product&)const;
 	bool operator>=(const Product&)const;
@@ -376,10 +378,11 @@ public:
 };
 
 class Products:public Hashable{
-	map<UUID,Product> productMap;
-	set<Product> products;
-	typedef set<Product>::iterator iterator;
-	typedef set<Product>::const_iterator const_iterator;
+	map<UUID,Product*> productMap;
+	vector<Product> products;
+	Configuration cfg;
+	typedef vector<Product>::iterator iterator;
+	typedef vector<Product>::const_iterator const_iterator;
 public:
 	Products();
 	void load();
@@ -391,6 +394,40 @@ public:
 	iterator end();
 	const_iterator cbegin()const;
 	const_iterator cend()const;
+};
+
+class OrderItem:public Hashable{
+private:
+	UUID p;
+	double ammount;
+	bool Void;
+public:
+	OrderItem();
+	OrderItem(const Product&,double,bool=false);
+	int hashCode()const;
+	const UUID& getProduct();
+	double getTotalAmmount();
+};
+
+class Order:public Hashable{
+private:
+	UUID fillerEmployee;
+	vector<OrderItem> items;
+	typedef vector<OrderItem>::const_iterator iterator;
+public:
+	/*
+		Constructs an empty order
+		The order cannot be used because it does not have a valid employee assigned
+	*/
+	Order();
+	Order(const Employee&);
+	iterator begin()const;
+	iterator end()const;
+	void addItem(const Product&,double);
+	void addVoid(const Product&,double);
+	double getTotal()const;
+	void finish();
+	int hashCode()const;
 };
 
 
