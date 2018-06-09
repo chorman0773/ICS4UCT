@@ -340,3 +340,10 @@ void Employees::sort(){
 	
 }
 
+Product::Product(){}
+
+Product::Product(const UUID& id,const string& name,const string& supplierName,const string& supplierMailingAddress,
+                    const string& supplierPhoneNumber,double cost,Units units):productId(id),name(name),
+                    supplierName(supplierName),supplierMailingAddress(supplierMailingAddress),
+                    supplierPhoneNumber(supplierPhoneNumber),cost(cost),units(units){}
+
