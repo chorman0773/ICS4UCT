@@ -106,7 +106,7 @@ public:
         int hash = 0;
         for(value_type v:*this){
             hash *= 31;
-            hash += hashcode<underlying_type>(static_cast<const underlying_type&>(v));
+            hash += hashcode<underlying_type>(static_cast<underlying_type]>(v));
         }
         return hash;
     }
