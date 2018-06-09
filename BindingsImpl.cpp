@@ -55,6 +55,8 @@ int32_t Employee::hashCode()const{
   hash += hashcode(id);
   hash *= prime;
   hash += hashcode(salary);
+  hash *= prime;
+  hash += permissions.hashCode();
   return hash;
 }
 
