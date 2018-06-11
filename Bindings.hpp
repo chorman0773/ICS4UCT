@@ -46,6 +46,7 @@ enum class AuthenticationResult{
     
     The Employee class satisfies StringConvertible (it can be implicit converted to a string),
     satisfies DefaultConstructible, CopyConstructible, MoveConstructible, CopyAssignable, and MoveAssignable
+	In addition, the employee class is usable in a multithreaded context. All mutation methods are synchronized.
 */
 class Employee : public Hashable{
 	string name;
@@ -56,7 +57,7 @@ class Employee : public Hashable{
 	EnumSet<Permission> permissions;
 	Status s;
 	bool dirty;
-	mutable recursive_mutex lock;
+	recursive_mutex lock;
 public:
     /*
         Default Constructor for Employee class.
@@ -72,8 +73,16 @@ public:
     */
 	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
 
+	/*
+		Copies an employee.
+		The new employee will be distinct from the old employee but will have the same id.
+	*/
 	Employee(const Employee&);
 
+	/*
+		Employee copy-assignment.
+		All fields from the passed employee will be copied, except for the employee's underlying lock.
+	*/
 	Employee& operator=(const Employee&);
     /*
         Factory Helper Method to create a new employee with a given name, pay, and password.
@@ -355,10 +364,20 @@ public:
 	const_reference operator[](const UUID&)const;
 };
 
+/*
+	Enumeration which represents a Unit.
+	So far 3 units are supported: bulk, mass (kg), and volume (L).
+*/
 enum class Units: unsigned char{
 	ammount, kg, L	
 };
 
+/*
+	Class which represents a Product.
+	The Product class extends Hashable, is thread-safe, and satisfies StringConvertible, DefaultConstrutible, CopyConstructible, MoveConstructible,
+	CopyAssignable, and MoveAssignable.
+	All mutation methods will aquire a reenterant instance specific lock.
+*/
 class Product:public Hashable{
 	UUID productId;
 	string name;
@@ -369,19 +388,63 @@ class Product:public Hashable{
 	Units units;
 	recursive_mutex lock;
 public:
+	/*
+		Constructs a null Product.
+	*/
 	Product();
+	/*
+		Creates a new Product based on the given id, name, supplier details, cost/unit, and unit
+	*/
 	Product(const UUID&,const string&,const string&,const string&,const string&,double,Units);
+	/*
+		Copies a given product.
+	*/
 	Product(const Product&);
+	/*
+		Copies a given product.
+	*/
 	Product& operator=(const Product&);
+	/*
+		Gets the Product's UUID.
+	*/
 	const UUID& getUUID()const;
+	/*
+		Gets the product's name.
+	*/
 	const string& getName()const;
+	/*
+		Gets the mailing address of the Supplier.
+	*/
 	const string& getSupplierMailingAddress()const;
+	/*
+		Gets the name of the Supplier.
+	*/
 	const string& getSupplierName()const;
+	/*
+		Gets the phone number of the Supplier.
+	*/
 	const string& getSupplierPhoneNumber()const;
+	/*
+		Gets the cost/unit of the Product.
+	*/
 	double getCost()const;
+	/*
+		Gets the units this product uses
+	*/
 	Units getUnits()const;
+	/*
+		Computes the hashcode of this product
+	*/
 	int hashCode()const;
+	/*
+		Creates a new supply requisition for a given quantity of the product.
+	*/
 	void request(double quantity);
+	/*
+		Converts this product to a string.
+		This function is effectively the same as getName(), but exists to satisfy StringConvertible.
+	*/
+	operator const string&()const;
 };
 
 class Products:public Hashable{
