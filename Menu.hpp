@@ -89,7 +89,7 @@ public:
         Initializes the menu with a given name, list of options, and wrapping setting (which is by default true).
         The options are passed by a compile time length known array.
         If a dynamic array is used, pass to the dynamicly sized constructor (deprecated) or reinterpret_cast to a correctly sized array.
-    */
+   */
 	template<size_t N> Menu(string name,string (&options)[N],bool wrapping=true):name(name),wraps(wrapping),lock(false){
 		loadOptions(options,N);
 	}
@@ -115,6 +115,24 @@ public:
 		vector<string> options;
 		for(const T& t:arr)
 			options.push_back(string(t));
+		loadOptions(options);
+	}
+
+			/*
+        Constructs a Menu with a given Collection of Some type.
+        This constructor only participates in overload resolution if Iterable satisfies ForwardIterable
+        and its Iterator is a Forward Iterator of some type which satisfies StringConvertible.
+    */
+	template<typename Iterable> Menu(string name,const Iterable& itr,bool wraps=true,
+			typename std::enable_if<std::is_convertible<decltype(*declval<Iterable::value_type>()),string>::value,bool>::type=true,
+			typename std::enable_if<std::is_convertible<typ
+			typename std::conditional<false,typename std::conditional<false,decltype(std::declval<Iterable>().begin()),
+		decltype(std::declval<Iterable>().end())>::type,bool>::type=false):name(name),wraps(wraps),lock(false)
+	{
+		typedef typename Iterable::value_type type;
+		vector<string> options = vector<string>();
+		for(type t:itr)
+			options.push_back(string(*t));
 		loadOptions(options);
 	}
     
