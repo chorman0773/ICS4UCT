@@ -1,6 +1,5 @@
 #ifndef __Hash_hpp_2018_03_23_09_48
 #define __Hash_hpp_2018_03_23_09_48
-#pragma once
 #include <cstdint>
 #include <type_traits>
 #include <typeinfo>
@@ -9,12 +8,34 @@
 #include <utility>
 #include <map>
 #include <array>
+#include <string>
 class Hashable{
 public:
 	virtual int hashCode()const = 0;
 };
 
-template<typename T> extern int32_t hashcode(T);
+
+int32_t hashcode(int);
+int32_t hashcode(char);
+int32_t hashcode(short);
+int32_t hashcode(unsigned char);
+int32_t hashcode(unsigned short);
+int32_t hashcode(unsigned int);
+int32_t hashcode(unsigned long long);
+int32_t hashcode(long long);
+int32_t hashcode(const char*);
+int32_t hashcode(const wchar_t*);
+int32_t hashcode(const void*);
+int32_t hashcode(nullptr_t);
+int32_t hashcode(double);
+int32_t hashcode(float);
+int32_t hashcode(bool);
+
+
+
+ int32_t hashcode(const std::string& str);
+
+
 
 using std::vector;
 
@@ -29,7 +50,7 @@ template<typename T> int32_t hashcode(const vector<T>& v){
 
 using std::array;
 
-template<typename T,size_t size>  int32_t hashcode(const array<T,size>& a){
+template<typename T,int size>  int32_t hashcode(const array<T,size>& a){
 	int32_t h = 0;
 	for(int i = 0;i<size;i++){
 		h*=31;
@@ -37,15 +58,6 @@ template<typename T,size_t size>  int32_t hashcode(const array<T,size>& a){
 	}
 	return h;
 } 
-
-template<typename T,size_t size> int32_t hashcode(const T(&a)[size]){
-	int32_t h = 0;
-	for(auto&& val:a){
-		h*=31;
-		h+=hashcode(val);
-	}
-	return h;
-}
 
 using std::unique_ptr;
 using std::shared_ptr;
@@ -66,12 +78,12 @@ template<typename T,typename U> int32_t hashcode(const pair<T,U>& p){
 	return hashcode(p.first)*31+hashcode(p.second);
 }
 
-template<typename T> int32_t hashcode(const pair<T*,size_t>& a){
+template<typename T> int32_t hashcode(const pair<T*,int>& a){
 	//Treat as array not as pair
 	int32_t h = 0;
-	for(int i =0;i<a.second();i++){
+	for(int i =0;i<a.second;i++){
 		h*=31;
-		h+=hashcode(a.first()[i]);
+		h+=hashcode(a.second()[i]);
 	}
 	return h;
 }

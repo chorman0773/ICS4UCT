@@ -8,6 +8,7 @@
 #include <Hash.hpp>
 #include <random>
 #include <Base64.hpp>
+#include <JTime.hpp>
 
 #include <cstring>
 
@@ -17,10 +18,29 @@
 
 #include <Config.hpp>
 
+using std::mutex;
+
+/*
+	Global Mutexes for files (when Concurrency is a thing).
+*/
+mutex logMtx;
+mutex requisitionMutex;
+mutex employeesMutex;
+mutex productsMutex;
+mutex recieptsMutex;
+
 using std::random_device;
 
 SecureRandom employeeRandom;
 
+void log(AuditAction action,const UUID& employee,const string& name,const string& actionString){
+	std::lock_guard<mutex> lock(logMtx);
+	Configuration cfg;
+	if(cfg.isAuditAction(action)){
+		std::ofstream strm(cfg.getFile(FileGroup::AuditLog),std::ios::app);
+		strm << name << "(" <<employee<<")"<<actionString<<std::endl;
+	}
+}
 
 unsigned char* saltPwd(const unsigned char* pwd,unsigned int size,const unsigned char (&salt)[32]){
   int outSize = size+32-(size%32);
@@ -35,6 +55,26 @@ Employee::Employee(const string& name,const UUID& id,double salary,const unsigne
   const EnumSet<Permission>& permissions):name(name),id(id),salary(salary),permissions(permissions),s(Status::OFFLINE),dirty(false){
 	  memcpy(this->salt,salt,32);
 	  memcpy(this->hash,hash,32);
+}
+
+Employee::Employee(const Employee& e):name(e.name),id(e.id),salary(e.salary),permissions(e.permissions),s(e.s),dirty(e.dirty){
+	memcpy(this->salt,e.salt,32);
+	memcpy(this->hash,e.hash,32);
+}
+
+Employee& Employee::operator=(const Employee& e){
+	std::lock_guard<recursive_mutex> sync(lock);
+	if(&e==this)
+		return *this;
+	name = e.name;
+	id = e.id;
+	salary = e.salary;
+	permissions = e.permissions;
+	s = e.s;
+	dirty = e.dirty;
+	memcpy(this->salt,e.salt,32);
+	memcpy(this->hash,e.hash,32);
+	return *this;
 }
 
 Employee Employee::newEmployee(const string& name,double salary,const string& pwd){
@@ -62,6 +102,7 @@ int32_t Employee::hashCode()const{
 }
 
 void Employee::setStatus(Status s){
+	std::lock_guard<recursive_mutex> sync(lock);
 	this->s = s;
 }
 
@@ -74,11 +115,13 @@ bool Employee::hasPermission(Permission p)const{
 }
 
 void Employee::addPermission(Permission p){
+  std::lock_guard<recursive_mutex> sync(lock);
   markDirty();
   permissions.add(p);
 }
 
 void Employee::removePermission(Permission p){
+  std::lock_guard<recursive_mutex> sync(lock);
   markDirty();
   permissions.remove(p);
 }
@@ -92,6 +135,7 @@ void Employee::getHash(unsigned char(&out)[32])const{
 }
 
 AuthenticationResult Employee::authenticate(const string& s){
+  std::lock_guard<recursive_mutex> sync(lock);
   int outSize = name.length()+32-(name.length()%32);
   char buffer[32];
   
@@ -109,6 +153,7 @@ AuthenticationResult Employee::authenticate(const string& s){
 }
 
 void Employee::setPassword(const string& pwd){
+  std::lock_guard<recursive_mutex> sync(lock);
   unsigned char salt[32];
   char hash[32];
   char* saltedPwd;
@@ -123,6 +168,7 @@ void Employee::setPassword(const string& pwd){
 }
 
 AuthenticationResult Employee::changePassword(const string& currPwd,const string& newPwd){
+  std::lock_guard<recursive_mutex> sync(lock);
   if(authenticate(currPwd)==AuthenticationResult::FAIL_BAD_PASSWORD)
     return AuthenticationResult::FAIL_BAD_PASSWORD;
   else if(newPwd.length()<8)
@@ -148,8 +194,9 @@ const EnumSet<Permission>& Employee::getPermissions()const{
 }
 
 void Employee::setPay(double salary){
- this->salary = salary; 
- markDirty();
+  std::lock_guard<recursive_mutex> sync(lock);
+  this->salary = salary; 
+  markDirty();
 }
 
 bool Employee::operator==(const Employee& o)const{
@@ -177,10 +224,12 @@ bool Employee::operator<=(const Employee& o)const{
 }
 
 void Employee::markDirty(){
- dirty = true; 
+  std::lock_guard<recursive_mutex> sync(lock);
+  dirty = true; 
 }
 void Employee::markClean(){
- dirty = false; 
+  std::lock_guard<recursive_mutex> sync(lock);
+  dirty = false; 
 }
 
 bool Employee::isDirty()const{
@@ -213,6 +262,8 @@ unsigned char fromHexByte(const char* str){
 }
 
 void Employees::load(){
+	std::lock_guard<recursive_mutex> sync(lock);
+	std::lock_guard<mutex> lock(employeesMutex);
 	Json::Value employees;
 	std::ifstream employeeFile(cfg.getFile(FileGroup::EmployeeList));
 	if(!employeeFile.is_open())
@@ -251,15 +302,17 @@ void Employees::load(){
 	}
 }
 void Employees::save(){
+	std::lock_guard<recursive_mutex> sync(lock);
+	std::lock_guard<mutex> lock(employeesMutex);
 	Json::Value employees(Json::objectValue);
 	Json::Value employeeList(Json::arrayValue);
-	for(const Employee& e:this->employeeRegistry){
+	for(const Employee* e:this->employeeRegistry){
 		Json::Value state(Json::objectValue);
-		state["uuid"]=e.getUUID().toString();
+		state["uuid"]=e->getUUID().toString();
 		unsigned char salt[32];
 		unsigned char hash[32];
-		e.getSalt(salt);
-		e.getHash(hash);
+		e->getSalt(salt);
+		e->getHash(hash);
 		string xsalt;
 		for(unsigned char c:salt){
 			xsalt += hexmap[c>>4];
@@ -272,10 +325,10 @@ void Employees::save(){
 		}
 		state["salt"] = xsalt;
 		state["hash"] = xhash;
-		state["name"] = e.getName();
-		state["pay"] = e.getPay();
-		state["permissions"] = e.getPermissions().toMap();
-		state["hashCode"] = e.hashCode();
+		state["name"] = e->getName();
+		state["pay"] = e->getPay();
+		state["permissions"] = e->getPermissions().toMap();
+		state["hashCode"] = e->hashCode();
 		employeeList.append(state);
 	}
 	employees["list"] = employeeList;
@@ -285,10 +338,10 @@ void Employees::save(){
 }
 
 void Employees::removeEmployee(const UUID& u){
-	const Employee& e = *employeeMap[u];
+	std::lock_guard<recursive_mutex> sync(lock);
 	employeeMap.erase(u);
 	for(int i = 0;i<employeeRegistry.size();i++){
-		if(employeeRegistry[i]==e){
+		if(employeeRegistry[i]->getUUID()==u){
 			iterator itr = employeeRegistry.begin();
 			itr+=i;
 			employeeRegistry.erase(itr);
@@ -298,31 +351,32 @@ void Employees::removeEmployee(const UUID& u){
 }
 
 const UUID& Employees::addEmployee(const string& name,double salary,const string& pwd){
- Employee toAdd = Employee::newEmployee(name,salary,pwd);
- addEmployee(toAdd);
- return getEmployee(toAdd.getUUID()).getUUID();
+  std::lock_guard<recursive_mutex> sync(lock);
+  Employee toAdd = Employee::newEmployee(name,salary,pwd);
+  addEmployee(toAdd);
+  return getEmployee(toAdd.getUUID()).getUUID();
 }
 
 void Employees::addEmployee(const Employee& e){
-	employeeRegistry.push_back(e);
-	Employee& target = employeeRegistry.back();
-	employeeMap[target.getUUID()] = &target;
+	std::lock_guard<recursive_mutex> sync(lock);
+	employeeMap[e.getUUID()] = e;
+	employeeRegistry.push_back(&employeeMap[e.getUUID()]);
 }
 
 Employees::reference Employees::getEmployee(const UUID& u){
- return *employeeMap.at(u); 
+ return employeeMap.at(u); 
 }
 
 Employees::const_reference Employees::getEmployee(const UUID& u)const{
-	return *employeeMap.at(u);
+	return employeeMap.at(u);
 }
 
 Employees::reference Employees::operator[](const UUID& u){
-	return *employeeMap.at(u);
+	return employeeMap.at(u);
 }
 
 Employees::const_reference Employees::operator[](const UUID& u)const{
-	return *employeeMap.at(u);
+	return employeeMap.at(u);
 }
 
 Employees::iterator Employees::begin(){
@@ -348,15 +402,15 @@ int Employees::length()const{
 int Employees::hashCode()const{
   int hash = 0;
   const int prime = 31;
-  for(const Employee& e:employeeRegistry){
+  for(const Employee* e:employeeRegistry){
    hash *= prime;
-   hash += e.hashCode();
+   hash += e->hashCode();
   }
   return hash;
 }
 
 Employees::const_reference Employees::getEmployee(int i)const{
-	return *(begin()+i);
+	return **(begin()+i);
 }
 
 void Employees::sort(){
@@ -397,4 +451,293 @@ void checkInstallation(){
 		target.addPermission(Permission::ADMINISTRATOR);
 		e.save();
 	}
+}
+
+Product::Product(){}
+Product::Product(const UUID& id,const string& name,const string& supplierName,const string& supplierMailingAddress,const string& supplierPhoneNumber,double cost,Units units):
+	productId(id),name(name),supplierName(supplierName),supplierMailingAddress(supplierMailingAddress),supplierPhoneNumber(supplierPhoneNumber),cost(cost),units(units){}
+
+Product::Product(const Product& other):productId(other.productId),name(other.name),supplierName(other.supplierName),
+	supplierMailingAddress(other.supplierMailingAddress),supplierPhoneNumber(other.supplierPhoneNumber),cost(other.cost),units(other.units){}
+
+Product& Product::operator=(const Product& other){
+	std::lock_guard<recursive_mutex> sync(lock);
+	if(&other==this)
+		return *this;
+	productId = other.productId;
+	name = other.name;
+	supplierName = other.supplierName;
+	supplierMailingAddress = other.supplierMailingAddress;
+	cost = other.cost;
+	units = other.units;
+	return *this;
+}
+
+const UUID& Product::getUUID()const{
+	return productId;
+}
+
+const string& Product::getName()const{
+	return name;
+}
+
+const string& Product::getSupplierName()const{
+	return supplierName;
+}
+
+const string& Product::getSupplierMailingAddress()const{
+	return supplierMailingAddress;
+}
+
+const string& Product::getSupplierPhoneNumber()const{
+	return supplierMailingAddress;
+}
+
+double Product::getCost()const{
+	return cost;
+}
+
+Units Product::getUnits()const{
+	return units;
+}
+
+string toString(Units unit){
+	switch(unit){
+	case Units::L:
+		return "L";
+	break;
+	case Units::kg:
+		return "kg";
+	break;
+	case Units::ammount:
+		return "bulk";
+	break;
+	}
+}
+
+Units fromString(const string& str){
+	if(str=="L")
+		return Units::L;
+	else if(str=="kg")
+		return Units::kg;
+	else
+		return Units::ammount;
+}
+
+void Product::request(double ammount){
+	std::lock_guard<recursive_mutex> sync(lock);
+	std::lock_guard<mutex> requisitionSync(requisitionMutex);
+	Configuration cfg;
+	Json::Value requisitions(Json::objectValue);
+	Json::Value requisitionList;
+	ifstream requisitionFile(cfg.getFile(FileGroup::Requisitions));
+	if(requisitionFile.is_open()){
+		requisitionFile >> requisitions;
+		requisitionList = requisitions["list"];
+		requisitionFile.close();
+	}
+	if(requisitionList.isNull())
+		requisitionList = Json::arrayValue;
+	Json::Value requisition(Json::objectValue);
+	requisition["productId"] = string(this->productId);
+	requisition["productName"] = this->name;
+	Json::Value supplier(Json::objectValue);
+	supplier["name"] = supplierName;
+	supplier["mailingAddress"] = supplierMailingAddress;
+	supplier["phoneNumber"] = supplierPhoneNumber;
+	requisition["supplier"] = supplier;
+	requisition["units"] = toString(units);
+	requisition["ammount"] = ammount;
+	requisitionList.append(requisition);
+	requisitions["list"] = requisitionList;
+	ofstream output(cfg.getFile(FileGroup::Requisitions));
+	output << requisitions;
+	output.close();
+}
+
+void Products::load(){
+	std::lock_guard<recursive_mutex> sync(lock);
+	std::lock_guard<mutex> lockFile(productsMutex);
+	HashValidationMode validationMode = cfg.getValidationMode(FileGroup::ProductList);
+	ifstream file(cfg.getFile(FileGroup::ProductList));
+	if(file.is_open()){
+		Json::Value products;
+		file >> products;
+		Json::Value list = products["list"];
+		for(const Json::Value& product:list){
+			bool hasHash = false;
+			int32_t hashcode;
+			if(validationMode!=HashValidationMode::None){
+				Json::Value hash = product["hashcode"];
+				if(!hash.isNull()){
+					hasHash = true;
+					hashcode = hash.asInt();
+				}
+			}
+			if(validationMode==HashValidationMode::Strict&&!hasHash)
+				continue;
+			
+			UUID id = product["uuid"].asString();
+			string name = product["name"].asString();
+			string supplierName = product["supplierName"].asString();
+			string supplierPhoneNumber = product["supplierPhoneNumber"].asString();
+			string supplierMailingAddress = product["supplierMailingAddress"].asString();
+			double cost = product["cost"].asDouble();
+			Units units = fromString(product["units"].asString());
+			Product p(id,name,supplierName,supplierMailingAddress,supplierPhoneNumber,cost,units);
+			if(!hasHash||p.hashCode()==hashcode)
+				addProduct(p);
+		}
+		file.close();
+	}
+}
+
+void Products::save(){
+	std::lock_guard<recursive_mutex> sync(lock);
+	std::lock_guard<mutex> lockFile(productsMutex);
+	Json::Value products(Json::objectValue);
+	products["list"] = Json::arrayValue;
+	Json::Value& list = products["list"];
+	for(const Product* product:*this){
+		Json::Value val(Json::objectValue);
+		val["uuid"] = string(product->getUUID());
+		val["name"] = product->getName();
+		val["supplierName"] = product->getSupplierName();
+		val["supplierMailingAddress"] = product->getSupplierMailingAddress();
+		val["supplierPhoneNumber"] = product->getSupplierPhoneNumber();
+		val["cost"] = product->getCost();
+		val["units"] = toString(product->getUnits());
+		list.append(val);
+	}
+	ofstream file("products.json");
+	file << products;
+	file.close();
+}
+
+void Products::removeProduct(const UUID& u){
+	productMap.erase(u);
+	for(int i = 0;i<products.size();i++){
+		if(products[i]->getUUID()==u){
+			products.erase(products.begin()+i,products.begin()+i);
+			break;
+		}
+	}	
+}
+
+void Products::addProduct(const Product& p){
+	std::lock_guard<recursive_mutex> sync(lock);
+	productMap[p.getUUID()] = p;
+	products.push_back(&productMap[p.getUUID()]);
+}
+
+const UUID& Products::addProduct(const string& name,const string& supplierName,const string& supplierMailingAddress,const string& supplierPhoneNumber,double cost,Units units){
+	Product p(UUID::ofNow(),name,supplierName,supplierMailingAddress,supplierPhoneNumber,cost,units);
+	addProduct(p);
+	return p.getUUID();
+}
+
+const Product& Products::getProduct(const UUID& u)const{
+	return productMap.at(u);
+}
+
+Product& Products::getProduct(const UUID& u){
+	return productMap.at(u);
+}
+
+const Product& Products::getProduct(int i)const{
+	return *products[i];
+}
+Product& Products::getProduct(int i){
+	return *products[i];
+}
+
+Products::iterator Products::begin(){
+	return products.begin();
+}
+
+Products::const_iterator Products::begin()const{
+	return products.begin();
+}
+
+Products::iterator Products::end(){
+	return products.end();
+}
+
+Products::const_iterator Products::end()const{
+	return products.end();
+}
+
+OrderItem::OrderItem(){}
+OrderItem::OrderItem(const Product& p,double ammount,bool Void):p(p.getUUID()),ammount(ammount*p.getCost()),Void(Void){}
+OrderItem::OrderItem(const OrderItem& o):p(o.p),ammount(o.ammount),Void(o.Void){}
+OrderItem& OrderItem::operator=(const OrderItem& o){
+	std::lock_guard<recursive_mutex> sync(lock);
+	p = o.p;
+	ammount = o.ammount;
+	Void = o.Void;
+	return *this;
+}
+
+int OrderItem::hashCode()const{
+	int hash = 0;
+	const int prime = 31;
+	hash = hashcode(p);
+	hash *= prime;
+	hash += hashcode(ammount);
+	hash *= prime;
+	hash += hashcode(Void);
+	return hash;
+}
+
+const UUID& OrderItem::getProduct()const{
+	return p;
+}
+
+double OrderItem::getTotalAmmount()const{
+	return Void?-ammount:ammount;
+}
+
+bool OrderItem::isVoid()const{
+	return Void;
+}
+
+Order::Order(){}
+Order::Order(const Employee& e):fillerEmployee(e.getUUID()){}
+
+Order::iterator Order::begin()const{
+	return items.begin();
+}
+Order::iterator Order::end()const{
+	return items.end();
+}
+
+double Order::getTotal()const{
+	double total(0.0);
+	for(const OrderItem& i:*this)
+		total += i.getTotalAmmount();
+	return total;
+}
+
+int Order::hashCode()const{
+	int32_t hash = 0;
+	const int32_t prime = 31;
+	for(const OrderItem& i:*this){
+		hash *= prime;
+		hash += i.hashCode();
+	}
+	return hash;
+}
+
+void Order::addItem(const Product& p,double ammount){
+	items.push_back(OrderItem(p,ammount,false));
+}
+void Order::voidItem(const Product& p,double ammount){
+	items.push_back(OrderItem(p,ammount,true));
+}
+
+void Order::finish(){
+	std::lock_guard<mutex> lock(recieptsMutex);
+	Configuration cfg;
+	ofstream output(cfg.getFile(FileGroup::Reciepts),std::ios::app);
+	output <<"Order: " << fillerEmployee << " total was "<<getTotal()<<std::endl;
 }

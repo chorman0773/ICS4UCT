@@ -8,6 +8,9 @@
 #include "UUID.hpp"
 #include "EnumSet.hpp"
 #include "Config.hpp"
+#include <mutex>
+
+using std::recursive_mutex;
 
 using std::string;
 using std::map;
@@ -53,6 +56,7 @@ class Employee : public Hashable{
 	EnumSet<Permission> permissions;
 	Status s;
 	bool dirty;
+	mutable recursive_mutex lock;
 public:
     /*
         Default Constructor for Employee class.
@@ -67,6 +71,10 @@ public:
         newEmployee()
     */
 	Employee(const string&,const UUID&,double,const unsigned char(&)[32],const unsigned char(&)[32],const EnumSet<Permission>&);
+
+	Employee(const Employee&);
+
+	Employee& operator=(const Employee&);
     /*
         Factory Helper Method to create a new employee with a given name, pay, and password.
         The new Employee will be assigned a Unique Id which is guarenteed (with Overwealming probability) of being different
@@ -232,12 +240,13 @@ public:
    Employees Satisfies Collection, Random-Access Iterable, and List of StringConvertible Types.
 */
 class Employees:public Hashable{
-	map<UUID,Employee*> employeeMap;
-	vector<Employee> employeeRegistry;
+	map<UUID,Employee> employeeMap;
+	vector<Employee*> employeeRegistry;
 	Configuration cfg;
+	mutable recursive_mutex lock;
 public:
-	typedef vector<Employee>::iterator iterator;
-	typedef vector<Employee>::const_iterator const_iterator;
+	typedef vector<Employee*>::iterator iterator;
+	typedef vector<Employee*>::const_iterator const_iterator;
 	typedef Employee value_type;
 	typedef Employee& reference;
 	typedef const Employee& const_reference;
@@ -358,9 +367,12 @@ class Product:public Hashable{
 	string supplierPhoneNumber;
 	double cost;
 	Units units;
+	recursive_mutex lock;
 public:
 	Product();
-	Product(const UUID&,const string&,const string&,const string&,double,Units);
+	Product(const UUID&,const string&,const string&,const string&,const string&,double,Units);
+	Product(const Product&);
+	Product& operator=(const Product&);
 	const UUID& getUUID()const;
 	const string& getName()const;
 	const string& getSupplierMailingAddress()const;
@@ -370,32 +382,32 @@ public:
 	Units getUnits()const;
 	int hashCode()const;
 	void request(double quantity);
-	void fillRequesition();
-	bool operator==(const Product&)const;
-	bool operator<=(const Product&)const;
-	bool operator>=(const Product&)const;
-	bool operator< (const Product&)const;
-	bool operator> (const Product&)const;
-	bool operator!=(const Product&)const;
 };
 
 class Products:public Hashable{
-	map<UUID,Product*> productMap;
-	vector<Product> products;
+	map<UUID,Product> productMap;
+	vector<Product*> products;
 	Configuration cfg;
-	typedef vector<Product>::iterator iterator;
-	typedef vector<Product>::const_iterator const_iterator;
+	recursive_mutex lock;
+	typedef vector<Product*>::iterator iterator;
+	typedef vector<Product*>::const_iterator const_iterator;
 public:
 	Products();
 	void load();
-	void save()const;
+	void save();
 	void removeProduct(const UUID&);
-	const UUID& addProduct(const string&,const string&,const string&,double,Units);
+	void addProduct(const Product&);
+	const UUID& addProduct(const string&,const string&,const string&,const string&,double,Units);
 	const Product& getProduct(const UUID&)const;
+	Product& getProduct(const UUID&);
+	const Product& getProduct(int)const;
+	Product& getProduct(int);
+	Product& operator[](const UUID&);
+	const Product& operator[](const UUID&)const;
 	iterator begin();
 	iterator end();
-	const_iterator cbegin()const;
-	const_iterator cend()const;
+	const_iterator begin()const;
+	const_iterator end()const;
 };
 
 class OrderItem:public Hashable{
@@ -403,12 +415,16 @@ private:
 	UUID p;
 	double ammount;
 	bool Void;
+	recursive_mutex lock;
 public:
 	OrderItem();
 	OrderItem(const Product&,double,bool=false);
+	OrderItem(const OrderItem&);
+	OrderItem& operator=(const OrderItem&);
 	int hashCode()const;
-	const UUID& getProduct();
-	double getTotalAmmount();
+	const UUID& getProduct()const;
+	double getTotalAmmount()const;
+	bool isVoid()const;
 };
 
 class Order:public Hashable{
@@ -426,13 +442,13 @@ public:
 	iterator begin()const;
 	iterator end()const;
 	void addItem(const Product&,double);
-	void addVoid(const Product&,double);
+	void voidItem(const Product&,double);
 	double getTotal()const;
 	void finish();
 	int hashCode()const;
 };
 
-
+void log(AuditAction,const UUID&,const string&,const string&);
 
 
 
