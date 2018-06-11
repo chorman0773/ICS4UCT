@@ -3,11 +3,7 @@
 
 
 #ifndef CFG_FILE
-#ifdef _SERVER
-#define CFG_FILE "server-config.json"
-#else
-#define CFG_FILE "client-config.json"
-#endif
+#define CFG_FILE "config.json"
 #endif
 #include <json/json.h>
 #include <string>

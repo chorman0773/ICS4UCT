@@ -1,6 +1,7 @@
 #include "Bindings.hpp"
 #include <SHA256.hpp>
 #include <SecureRandom.hpp>
+#include <Quicksort.hpp>
 
 #include <sqlite3/sqlite3.h>
 #include <UUID.hpp>
@@ -13,6 +14,8 @@
 #include <json/json.h>
 
 #include <fstream>
+
+#include <Config.hpp>
 
 using std::random_device;
 
@@ -55,9 +58,11 @@ int32_t Employee::hashCode()const{
   hash += hashcode(id);
   hash *= prime;
   hash += hashcode(salary);
-  hash *= prime;
-  hash += permissions.hashCode();
   return hash;
+}
+
+void Employee::setStatus(Status s){
+	this->s = s;
 }
 
 const string& Employee::getName()const{
@@ -209,11 +214,23 @@ unsigned char fromHexByte(const char* str){
 
 void Employees::load(){
 	Json::Value employees;
-	std::ifstream employeeFile("employees.json");
+	std::ifstream employeeFile(cfg.getFile(FileGroup::EmployeeList));
+	if(!employeeFile.is_open())
+		return;
+	HashValidationMode validationMode = cfg.getValidationMode(FileGroup::EmployeeList);
 	employeeFile >> employees;
 	employeeFile.close();
 	Json::Value list = employees["list"];
 	for(const Json::Value& state:list){
+		bool hasHash = false;
+		int32_t hashCode;
+		Json::Value hashJson = state["hashcode"];
+		if(validationMode!=HashValidationMode::None)
+			hasHash = !hashJson.isNull();
+		if(hasHash)
+			hashCode = int(hashJson.asLargestInt());
+		else if(validationMode==HashValidationMode::Strict)
+			continue; //If No hashcode availble and we are in strict mode, then ignore the employee.
 		unsigned char salt[32];
 		unsigned char hash[32];
 		string xsalt = state["salt"].asString();
@@ -227,6 +244,9 @@ void Employees::load(){
 		double pay = state["pay"].asDouble();
 		EnumSet<Permission> permissions(state["permissions"].asLargestUInt());
 		Employee e(name,id,pay,salt,hash,permissions);
+		if(hasHash)
+			if(hashCode!=e.hashCode())
+				continue;//If hashcode is stored, we are validating hashes, and there is a hashcode mismatch, then ignore the employee
 		addEmployee(e);
 	}
 }
@@ -255,10 +275,11 @@ void Employees::save(){
 		state["name"] = e.getName();
 		state["pay"] = e.getPay();
 		state["permissions"] = e.getPermissions().toMap();
+		state["hashCode"] = e.hashCode();
 		employeeList.append(state);
 	}
 	employees["list"] = employeeList;
-	std::ofstream employeeFile("employees.json");
+	std::ofstream employeeFile(cfg.getFile(FileGroup::EmployeeList));
 	employeeFile << employees;
 	employeeFile.close();
 }
@@ -339,13 +360,41 @@ Employees::const_reference Employees::getEmployee(int i)const{
 }
 
 void Employees::sort(){
-	
+/*
+	quicksort(this->employeeRegistry);
+	this->employeeMap.clear();
+	for(Employee& e:employeeRegistry)
+		employeeMap[e.getUUID()] = &e;
+*/
 }
 
-Product::Product(){}
+const char configDefault[] = "{\"files\":{\n\t\"employees\":\"employees.json\",\n\t\"audits\":\"audits.json\",\n\t"\
+"\"products\":\"products.json\",\n\t\"requisitions\":\"requisitions.json\",\n\t\"reciepts\":\"reciepts.json\"},"\
+"\"audit-actions\":{\n\t\"authenticate\":false,\t\n\"authenticate-admin\":true,\n\t\"manage-accounts\":true,\n\t\"change-own-password\":true,"\
+"\n\t\"manage-products\":true,\n\t\"make-requistion\":true,\n\t\"fill-requistion\":true,n\t\"enter-reciept\":true\n},"\
+"\n\t\"hash-validation\":{\n\t\"employees\":\"strict\",\n\t\"products\":\"strict\",\n\t\"audits\":\"none\",\n\t\"requistions\":\"strict\","\
+"\n\t\"reciepts\":\"strict\"\n\t}\n}";
 
-Product::Product(const UUID& id,const string& name,const string& supplierName,const string& supplierMailingAddress,
-                    const string& supplierPhoneNumber,double cost,Units units):productId(id),name(name),
-                    supplierName(supplierName),supplierMailingAddress(supplierMailingAddress),
-                    supplierPhoneNumber(supplierPhoneNumber),cost(cost),units(units){}
+const char defaultAdminName[] = "sysadmin";
+const char defaultAdminPassword[] = "password";
 
+using std::ofstream;
+using std::ifstream;
+
+void checkInstallation(){
+	ofstream out;
+	Configuration cfg;
+	if(cfg.getConfig().isNull()){
+		out = ofstream("config.json");
+		out << configDefault;
+		out.close();
+	}
+	Employees e;
+	e.load();
+	if(e.length()==0){
+		UUID u = e.addEmployee(string(defaultAdminName),0.0,string(defaultAdminPassword));
+		Employee& target = e[u];
+		target.addPermission(Permission::ADMINISTRATOR);
+		e.save();
+	}
+}

@@ -9,6 +9,67 @@
 using std::string;
 using std::ifstream;
 using std::ios;
+string getJsonString(AuditAction a){
+	switch(a){
+	case AuditAction::Authenticate:
+		return "authenticate";
+	break;
+	case AuditAction::AuthenticateAdmin:
+		return "authenticate-admin";
+	break;
+	case AuditAction::ManageAccounts:
+		return "manage-accounts";
+	break;
+	case AuditAction::ChangeOwnPassword:
+		return "change-own-password";
+	break;
+	case AuditAction::ChangeOtherPassword:
+		return "change-other-password";
+	break;
+	case AuditAction::ManageProducts:
+		return "manage-products";
+	break;
+	case AuditAction::MakeRequisition:
+		return "make-requisiton";
+	break;
+	case AuditAction::FillRequisition:
+		return "fill-requisition";
+	break;
+	case AuditAction::EnterReciept:
+		return "enter-reciept";
+	break;
+	}
+	throw"Bad Enum Constant";
+}
+string getJsonString(FileGroup f){
+	switch(f){
+	case FileGroup::EmployeeList:
+		return "employees";
+	break;
+	case FileGroup::ProductList:
+		return "products";
+	break;
+	case FileGroup::AuditLog:
+		return "audits";
+	break;
+	case FileGroup::Requisitions:
+		return "requisitions";
+	break;
+	case FileGroup::Reciepts:
+		return "reciepts";
+	break;
+	}
+	throw"Bad Enum Constant";
+}
+
+HashValidationMode getValidationMode(const string& str){
+	if(str=="strict")
+		return HashValidationMode::Strict;
+	else if(str=="week")
+		return HashValidationMode::Loose;
+	else
+		return HashValidationMode::None;
+}
 
 string getExecutablePath(){
     return getenv("PWD");
@@ -32,7 +93,7 @@ void Configuration::reload(){
     ifstream strm;
     strm.open(CFG_FILE,ios::in);
 	if(!strm.is_open())
-		throw"Could not open database, file does not exist";
+		cfg=Json::nullValue;
     strm >> cfg;
 }
 
@@ -40,44 +101,35 @@ const Json::Value& Configuration::getConfig()const{
     return cfg;
 }
 
-string Configuration::getHostname()const{
-    Json::Value host = cfg["host"];
-    if(host.isNull())
-        throw"Host block not found";
-    Json::Value name = host["name"];
-    if(name.isNull())
-        throw"Host name not found";
-    return name.asString();
+string Configuration::getFile(FileGroup g)const{
+	Json::Value files = cfg["files"];
+	if(files.isNull())
+		throw "Failed to get the file list";
+	Json::Value f = files[getJsonString(g)];
+	if(f.isNull())
+		throw "Failed to get the requested file file";
+	return f.asString();
 }
 
-int Configuration::getPort()const{
-    Json::Value host = cfg["host"];
-    if(host.isNull())
-        throw"Host block not found";
-    Json::Value port = host["port"];
-    if(port.isNull())
-        throw"Port not found";
-	return port.asInt();
-};
-
-string Configuration::getDatabaseRef()const{
-    Json::Value path = cfg["path"];
-    if(path.isNull())
-        throw"Database path not found";
-    Json::Value database = path["db"];
-    if(database.isNull())
-        throw"Database path not found";
-    string target = "sqlite:"+database.asString();
-    return target;
+bool Configuration::isAuditAction(AuditAction a)const{
+	Json::Value auditActions = cfg["audit-actions"];
+	if(auditActions.isNull())
+		throw "Failed to get audit action list";
+	Json::Value action = auditActions[getJsonString(a)];
+	if(action.isNull()||!action.asBool())
+		return false;
+	return true;
 }
 
-string Configuration::getPrivateKeyFile(const UUID& id)const{
-    Json::Value path = cfg["path"];
-    if(path.isNull())
-        throw"Users Directory not found";
-    Json::Value userPath = path["users"];
-    if(userPath.isNull())
-        throw"Users Directory not found";
-	string privkeyPath = userPath.asString()+"/PRIVKEY-"+id;
-    return privkeyPath;
+HashValidationMode Configuration::getValidationMode(FileGroup g)const{
+	Json::Value hashValidation = cfg["hash-validation"];
+	if(hashValidation.isNull())
+		throw "Failed to get hash-validation list";
+	Json::Value type = hashValidation[getJsonString(g)];
+	if(type.isNull())
+		return HashValidationMode::None;
+	return ::getValidationMode(type.asString());
 }
+
+
+

@@ -7,6 +7,7 @@
 #include "Hash.hpp"
 #include "UUID.hpp"
 #include "EnumSet.hpp"
+#include "Config.hpp"
 
 using std::string;
 using std::map;
@@ -233,6 +234,7 @@ public:
 class Employees:public Hashable{
 	map<UUID,Employee*> employeeMap;
 	vector<Employee> employeeRegistry;
+	Configuration cfg;
 public:
 	typedef vector<Employee>::iterator iterator;
 	typedef vector<Employee>::const_iterator const_iterator;
@@ -358,7 +360,7 @@ class Product:public Hashable{
 	Units units;
 public:
 	Product();
-	Product(const UUID&,const string&,const string&,const string&,const string&,double,Units);
+	Product(const UUID&,const string&,const string&,const string&,double,Units);
 	const UUID& getUUID()const;
 	const string& getName()const;
 	const string& getSupplierMailingAddress()const;
