@@ -7,6 +7,8 @@
 #include <type_traits>
 #include "TypingManagement.hpp"
 
+using std::declval;
+
 #if __cplusplus >= 201103L
 #define __MENU_CODE_VARARGS_TEMPLATE
 #define __MENU_CODE_INITIALIZER_LIST
