@@ -1,7 +1,6 @@
 #ifndef __Config_hpp_2018_04_25_09_25
 #define __Config_hpp_2018_04_25_09_25
 
-#include "ComplierCfg.hpp"
 
 #ifndef CFG_FILE
 #ifdef _SERVER
@@ -16,16 +15,28 @@
 
 using std::string;
 
+enum class AuditAction{
+	Authenticate,AuthenticateAdmin,ManageAccounts,ChangeOwnPassword,
+	ChangeOtherPassword,ManageProducts,MakeRequisition,FillRequisition,EnterReciept
+};
+
+enum class FileGroup{
+	EmployeeList,ProductList,Requisitions,AuditLog,Reciepts
+};
+
+enum class HashValidationMode{
+	None, Loose, Strict
+};
+
 class Configuration{
     Json::Value cfg;
 public:
     Configuration();
     void reload();
     const Json::Value& getConfig()const;
-    string getHostname()const;
-    int getPort()const;
-    string getDatabaseRef()const;
-    string getPrivateKeyFile(const UUID&)const;
+    string getFile(FileGroup g)const;
+	bool isAuditAction(AuditAction a)const;
+	HashValidationMode getValidationMode(FileGroup g)const;
 };
 
 
