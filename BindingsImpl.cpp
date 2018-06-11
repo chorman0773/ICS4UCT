@@ -385,7 +385,7 @@ void checkInstallation(){
 	ofstream out;
 	Configuration cfg;
 	if(cfg.getConfig().isNull()){
-		out = ofstream("config.json");
+		out = ofstream(CFG_FILE);
 		out << configDefault;
 		out.close();
 	}
