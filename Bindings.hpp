@@ -362,6 +362,8 @@ public:
         This method is an alias of the equivalent getEmployee
     */
 	const_reference operator[](const UUID&)const;
+
+	vector<string> getNameVector()const;
 };
 
 /*
@@ -447,6 +449,7 @@ public:
 	operator const string&()const;
 };
 
+
 class Products:public Hashable{
 	map<UUID,Product> productMap;
 	vector<Product*> products;
@@ -471,6 +474,7 @@ public:
 	iterator end();
 	const_iterator begin()const;
 	const_iterator end()const;
+	vector<string> getNameVector()const;
 };
 
 class OrderItem:public Hashable{
@@ -511,6 +515,9 @@ public:
 	int hashCode()const;
 };
 
+/*
+	Logs a particular action if the configuration enables it.
+*/
 void log(AuditAction,const UUID&,const string&,const string&);
 
 
